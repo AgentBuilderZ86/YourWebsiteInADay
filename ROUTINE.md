@@ -33,7 +33,6 @@ comportement de la routine, on modifie ce fichier (pas le planning).
 # Si le dépôt n'est pas présent : outil add_repo (AgentBuilderZ86/YourWebsiteInADay, access "push"), puis clone.
 git fetch origin && git checkout "$(git remote show origin | sed -n 's/.*HEAD branch: //p')" && git pull
 pip install -q -e .
-cp -n config.example.yaml config.yaml
 ```
 
 Lire la clé : connecteur Netlify → `netlify-project-services-updater`, opération `manage-env-vars`,
@@ -114,5 +113,8 @@ Le vendredi à l'exécution de 14 h 40 UTC, envoyer aussi ce résumé par email 
 | Heure UTC | Marchés en fenêtre d'envoi (8 h–18 h locales) |
 |---|---|
 | 07:40 lun–ven | Maroc, France, Belgique, Émirats |
-| 14:40 lun–ven | France, Belgique, Maroc, Canada / Québec, États-Unis |
+| 14:40 lun–ven | France, Belgique, Maroc (relances, réponses) + bilan hebdo le vendredi |
 | 22:40 dim–jeu | Australie (lendemain matin) |
+
+États-Unis et Canada / Québec : désactivés dans la config tant qu'aucune adresse postale d'expéditeur
+n'est renseignée. Pour les activer : `business.postal_address` puis `enabled: true` sur US, CA, QC.

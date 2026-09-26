@@ -31,8 +31,8 @@ personnalisé, relances, réponses et transmission des closings à AZ.
 | Maroc | FR | 2 990 MAD | 6 990 MAD | 14 990 MAD | actif (+ WhatsApp si pas d'email) |
 | Émirats | EN | 1 990 AED | 4 990 AED | 11 900 AED | actif |
 | Australie | EN | 790 AUD | 1 990 AUD | 4 900 AUD | actif |
-| États-Unis | EN | $590 | $1,490 | $3,490 | en attente d'adresse postale (CAN-SPAM) |
-| Canada / Québec | EN / FR | 790 CAD | 1 990 CAD | 4 500 CAD | en attente d'adresse postale (LCAP) |
+| États-Unis | EN | $590 | $1,490 | $3,490 | désactivé : adresse postale requise (CAN-SPAM) |
+| Canada / Québec | EN / FR | 790 CAD | 1 990 CAD | 4 500 CAD | désactivé : adresse postale requise (LCAP) |
 | Royaume-Uni | EN | £450 | £1,190 | £2,790 | désactivé (PECR) |
 
 Plus un abonnement mensuel (hébergement, maintenance) de 29 à 590 selon l'offre et le pays.

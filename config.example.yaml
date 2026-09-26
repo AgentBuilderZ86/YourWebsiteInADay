@@ -57,7 +57,8 @@ markets:
       Vous recevez ce message car les coordonnées de votre activité sont publiques (loi 09-08).
       Répondez « STOP » pour ne plus être contacté : vos données seront supprimées.
   CA:
-    enabled: true
+    # Désactivé tant que business.postal_address est vide (adresse postale obligatoire)
+    enabled: false
     name: "Canada"
     language: en
     currency: "CAD"
@@ -70,7 +71,8 @@ markets:
       You are receiving this one-off business message because your business email is publicly listed
       and our offer relates to your business. Reply "STOP" to unsubscribe; we will honour it immediately.
   QC:
-    enabled: true
+    # Désactivé tant que business.postal_address est vide (adresse postale obligatoire)
+    enabled: false
     name: "Québec"
     country_code: "CA"
     language: fr
@@ -84,7 +86,8 @@ markets:
       Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
       concerne votre activité. Répondez « STOP » pour vous désabonner ; ce sera pris en compte immédiatement.
   US:
-    enabled: true
+    # Désactivé tant que business.postal_address est vide (adresse postale obligatoire)
+    enabled: false
     name: "United States"
     language: en
     currency: "$"

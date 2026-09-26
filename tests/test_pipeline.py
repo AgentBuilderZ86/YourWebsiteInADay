@@ -107,6 +107,8 @@ def test_send_window_and_postal_address(cfg):
     assert in_send_window(cfg, "FR", PARIS_MORNING)
     assert not in_send_window(cfg, "US", PARIS_MORNING)
     assert not in_send_window(cfg, "FR", datetime(2026, 9, 27, 9, 0, tzinfo=timezone.utc))  # dimanche
+    assert can_email_market(cfg, "US") == (False, "marché désactivé")
+    cfg["markets"]["US"]["enabled"] = True
     assert can_email_market(cfg, "US") == (False, "adresse postale de l'expéditeur requise (business.postal_address)")
     cfg["business"]["postal_address"] = "1 rue X, Casablanca"
     assert can_email_market(cfg, "US")[0]
