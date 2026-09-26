@@ -1,0 +1,50 @@
+{# Maquette dessinée en HTML (aucune image) : s'affiche même quand la messagerie bloque les images #}
+<table role="presentation" width="204" cellpadding="0" cellspacing="0" border="0" bgcolor="{{ c.ink }}" style="width:204px; background-color:{{ c.ink }}; border-radius:30px;">
+  <tr><td bgcolor="{{ c.ink }}" style="padding:9px;">
+    <table role="presentation" width="186" cellpadding="0" cellspacing="0" border="0" bgcolor="{{ phone.bg }}" style="width:186px; background-color:{{ phone.bg }}; border-radius:22px;">
+      <!-- barre du haut -->
+      <tr>
+        <td style="padding:14px 14px 0; font-family:{{ f.serif }}; font-size:13px; line-height:16px; color:{{ c.ink }};">{{ lead.name }}<span style="color:{{ phone.accent }};">.</span></td>
+      </tr>
+      <!-- sur-titre -->
+      <tr>
+        <td style="padding:14px 14px 0; font-family:{{ f.sans }}; font-size:8px; line-height:11px; letter-spacing:1.2px; text-transform:uppercase; color:{{ phone.accent }}; font-weight:600;">{{ phone.eyebrow }}</td>
+      </tr>
+      <!-- titre -->
+      <tr>
+        <td style="padding:6px 14px 0; font-family:{{ f.serif }}; font-size:19px; line-height:21px; letter-spacing:-0.3px; color:{{ c.ink }};">{{ phone.tagline }}</td>
+      </tr>
+      <tr>
+        <td style="padding:8px 14px 0; font-family:{{ f.sans }}; font-size:9px; line-height:13px; color:{{ c.muted }};">{{ phone.intro }}</td>
+      </tr>
+      <!-- bouton -->
+      <tr>
+        <td style="padding:12px 14px 0;">
+          <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+            <td bgcolor="{{ phone.accent }}" style="background-color:{{ phone.accent }}; border-radius:999px; padding:7px 12px; font-family:{{ f.sans }}; font-size:9px; line-height:11px; font-weight:600; color:#ffffff;">{{ phone.cta }} &rarr;</td>
+          </tr></table>
+        </td>
+      </tr>
+      <!-- visuel -->
+      <tr>
+        <td style="padding:14px 14px 14px;">
+          <table role="presentation" width="158" cellpadding="0" cellspacing="0" border="0" bgcolor="{{ phone.accent }}" style="width:158px; background-color:{{ phone.accent }}; border-radius:14px;">
+            <tr>
+              <td style="padding:10px 10px 0;">
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+                  <td bgcolor="#ffffff" style="background-color:#ffffff; border-radius:999px; padding:4px 8px; font-family:{{ f.sans }}; font-size:8px; line-height:10px; font-weight:600; color:{{ c.ink }};"><span style="color:{{ phone.accent }};">&#9679;</span> {{ phone.chip }}</td>
+                </tr></table>
+              </td>
+            </tr>
+            <tr>
+              <td height="58" style="height:58px; font-size:0; line-height:0;">&nbsp;</td>
+            </tr>
+            <tr>
+              <td style="padding:0 12px 12px; font-family:{{ f.serif }}; font-size:15px; line-height:18px; color:#ffffff;">{{ lead.name }}</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </td></tr>
+</table>

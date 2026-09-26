@@ -11,11 +11,6 @@
     <td class="px" style="padding:6px 40px 10px;">
       <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{{ c.soft }}; border-radius:14px;">
         <tr>
-          {% if preview_url %}
-          <td width="96" valign="middle" style="padding:14px 0 14px 14px;">
-            <a href="{{ mockup_url }}" target="_blank" style="display:block;"><img src="{{ preview_url }}" width="82" height="151" alt="{{ s.preview_alt }} {{ lead.name }}" style="display:block; width:82px; height:auto; border:0; border-radius:12px; background:#2b2622; color:#ffffff; font-size:11px;"></a>
-          </td>
-          {% endif %}
           <td valign="middle" style="padding:14px 18px; font-family:{{ f.sans }};">
             <span style="font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:{{ c.accent }};">{{ s.mockup_kicker }}</span><br>
             <span style="font-family:{{ f.serif }}; font-size:18px; line-height:24px; color:{{ c.ink }};">{{ lead.name }}</span><br>

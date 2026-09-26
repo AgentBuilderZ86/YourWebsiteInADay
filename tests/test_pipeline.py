@@ -300,9 +300,9 @@ def test_html_email_initial(cfg):
                              preview_url="https://x/demo/shine-spa-32/preview.jpg")
     assert html.startswith("<!doctype html>")
     assert ">49</span>" in html and "À refaire" in html and "shinespa.fr" in html
-    assert 'src="https://x/demo/shine-spa-32/preview.jpg"' in html
-    assert 'height="343"' in html and 'bgcolor="#1a1614"' in html
-    assert '<a href="https://x/demo/shine-spa-32/" style="display:inline-block;">' not in html
+    assert "<img" not in html  # maquette dessinée en HTML : rien à bloquer
+    assert "Prenez soin de vous" in html and "INSTITUT" not in html  # accroche du métier ; majuscules via CSS
+    assert "background:" not in html and 'bgcolor="#1a1614"' in html
     assert "Conseillé pour vous" in html and "1 290 €" in html and "L34-5" in html
     assert len(html.encode()) < 60_000  # Gmail tronque au-delà de ~102 Ko
 

@@ -159,6 +159,29 @@ def render_email(kind: str, lead: dict[str, Any], cfg: dict[str, Any], *,
     return subject.strip(), body.strip() + "\n"
 
 
+_BG_RE = re.compile(r'<(\w+)([^>]*?)style="([^"]*?)background:\s*(#[0-9a-fA-F]{3,6})\s*;?')
+
+
+def harden_backgrounds(html: str) -> str:
+    """background:#xxx → background-color + attribut bgcolor : certaines messageries ignorent le raccourci CSS."""
+    def fix(m: re.Match) -> str:
+        tag, attrs, before, color = m.groups()
+        extra = f' bgcolor="{color}"' if tag.lower() in ("td", "table", "body", "tr") and "bgcolor=" not in attrs else ""
+        return f'<{tag}{attrs}{extra} style="{before}background-color:{color};'
+    return _BG_RE.sub(fix, html)
+
+
+def _phone(lead: dict[str, Any], cfg: dict[str, Any], lang: str, category_label: str) -> dict[str, str]:
+    from .mockup import DEFAULT_THEME, STRINGS as MOCKUP_STRINGS, THEMES
+    theme = THEMES.get(lead.get("category") or "", DEFAULT_THEME)
+    tagline, cta = theme[lang]
+    t = MOCKUP_STRINGS[lang]
+    city = lead.get("city") or ""
+    return {"accent": theme["accent"], "bg": theme["bg"], "tagline": tagline, "cta": cta,
+            "eyebrow": " · ".join(p for p in (category_label, city) if p), "intro": t["intro"],
+            "chip": t["chip_booking"]}
+
+
 def _linkify(text: str) -> Markup:
     """Liens cliquables, affichés sans « https:// » ni barre finale (plus lisible)."""
     def link(m: re.Match) -> str:
@@ -175,7 +198,8 @@ def render_email_html(kind: str, lead: dict[str, Any], cfg: dict[str, Any], *, m
     lang = ctx["lang"]
     s = STRINGS[lang]
     subject, text = render_email(kind, lead, cfg, mockup_url=mockup_url, original_subject=original_subject)
-    ctx.update(c=COLORS, f=FONTS, s=s, subject=subject, preview_url=preview_url if mockup_url else None)
+    ctx.update(c=COLORS, f=FONTS, s=s, subject=subject, preview_url=preview_url if mockup_url else None,
+               phone=_phone(lead, cfg, lang, ctx["category_label"]))
     if kind == "initial":
         score = ctx["score"] or 0
         ctx["score"] = score
@@ -184,7 +208,7 @@ def render_email_html(kind: str, lead: dict[str, Any], cfg: dict[str, Any], *, m
         codes = [i["code"] for i in ctx["issues"]]
         ctx["headline_problem"] = next((s["problem"][c] for c in codes if c in s["problem"]), s["problem"]["no_site"])
         ctx["preheader"] = (s["preheader_site"].format(score=score) if ctx["has_site"] else s["preheader_none"])
-        return _html_env.get_template("emails/html/initial.html").render(**ctx)
+        return harden_backgrounds(_html_env.get_template("emails/html/initial.html").render(**ctx))
     # Relances : le texte (volontairement personnel) mis en page, sans la signature texte
     sender = cfg["business"]["sender_name"].strip()
     lines = text.split("\n")
@@ -193,7 +217,7 @@ def render_email_html(kind: str, lead: dict[str, Any], cfg: dict[str, Any], *, m
     paragraphs = [" ".join(p.split("\n")).strip() for p in "\n".join(lines).split("\n\n") if p.strip()]
     ctx.update(paragraphs=[_linkify(p) for p in paragraphs], show_mockup=kind != "followup_3",
                preheader=paragraphs[1] if len(paragraphs) > 1 else "")
-    return _html_env.get_template("emails/html/followup.html").render(**ctx)
+    return harden_backgrounds(_html_env.get_template("emails/html/followup.html").render(**ctx))
 
 
 def render_whatsapp(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None = None) -> str:
