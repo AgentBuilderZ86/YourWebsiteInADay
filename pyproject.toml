@@ -1,0 +1,18 @@
+[project]
+name = "ywiad"
+version = "0.1.0"
+description = "YourWebsiteInADay — détection de commerçants au site web défaillant, audit, maquette et prospection automatisée"
+requires-python = ">=3.10"
+dependencies = ["requests>=2.31", "PyYAML>=6.0", "Jinja2>=3.1"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8"]
+
+[project.scripts]
+ywiad = "ywiad.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["ywiad*"]
+
+[tool.setuptools.package-data]
+ywiad = ["templates/**/*"]

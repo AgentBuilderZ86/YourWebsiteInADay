@@ -1,0 +1,14 @@
+Re: {{ original_subject }}
+---
+Bonjour,
+
+Je ne veux pas vous importuner : ce sera mon dernier message.
+
+Si le sujet du site de {{ lead.name }} redevient d'actualité, il suffit de répondre à cet email — la maquette et l'audit restent disponibles.
+
+Belle continuation,
+{{ business.sender_name }}
+{{ business.name }} — {{ business.website }}
+
+--
+{{ business.legal_footer }}

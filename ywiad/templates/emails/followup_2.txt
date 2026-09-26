@@ -1,0 +1,15 @@
+Re: {{ original_subject }}
+---
+Bonjour,
+
+Petite précision qui peut vous intéresser : l'offre Basique démarre à {{ tiers[0].price }}, hébergement inclus, et le site est en ligne en {{ tiers[0].delivery }}. Aucun travail de votre côté : nous récupérons vos infos, photos et avis Google.
+
+Un exemple de ce que nous ferions pour {{ lead.name }} : {{ mockup_url or business.website }}
+
+Un créneau de 10 minutes cette semaine ?
+
+{{ business.sender_name }} — {{ business.phone }}
+
+--
+{{ business.legal_footer }}
+Pour ne plus être contacté, répondez « STOP ».

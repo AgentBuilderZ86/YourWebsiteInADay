@@ -1,0 +1,56 @@
+name: Routine quotidienne de prospection
+
+on:
+  schedule:
+    - cron: "17 7 * * 1-5"   # du lundi au vendredi, 07:17 UTC (08:17 au Maroc)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency: routine
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - run: pip install -e .
+
+      # L'état du CRM (SQLite, maquettes, rapports) est conservé sur la branche "crm-data"
+      - name: Restaurer l'état du CRM
+        run: |
+          if git fetch origin crm-data 2>/dev/null; then
+            git worktree add ../crm origin/crm-data
+            cp -r ../crm/data ../crm/out . 2>/dev/null || true
+          fi
+
+      - name: Lancer la routine
+        env:
+          SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
+          IMAP_PASSWORD: ${{ secrets.IMAP_PASSWORD }}
+          GOOGLE_PLACES_API_KEY: ${{ secrets.GOOGLE_PLACES_API_KEY }}
+          PAGESPEED_API_KEY: ${{ secrets.PAGESPEED_API_KEY }}
+          YWIAD_CONFIG: ${{ vars.YWIAD_CONFIG }}
+        run: |
+          # La config peut être fournie via la variable de dépôt YWIAD_CONFIG (contenu YAML complet)
+          if [ -n "$YWIAD_CONFIG" ]; then printf '%s' "$YWIAD_CONFIG" > config.yaml; fi
+          ywiad -v run
+          cat out/reports/$(date -u +%F).md >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Sauvegarder l'état du CRM
+        run: |
+          git config user.name "ywiad-bot"
+          git config user.email "ywiad-bot@users.noreply.github.com"
+          rm -rf ../state && mkdir ../state && cp -r data out ../state/
+          git checkout --orphan crm-data-tmp
+          git rm -rf --cached . >/dev/null
+          find . -mindepth 1 -maxdepth 1 ! -name .git ! -name data ! -name out -exec rm -rf {} +
+          git add -f data out
+          git commit -m "CRM : état du $(date -u +%F)"
+          git push -f origin HEAD:crm-data

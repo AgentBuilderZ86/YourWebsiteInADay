@@ -1,0 +1,115 @@
+# Copiez ce fichier en config.yaml puis adaptez-le.
+# Les secrets (mots de passe SMTP, clés API) se passent par variables d'environnement.
+
+business:
+  name: "YourWebsiteInADay"
+  sender_name: "Votre Nom"
+  sender_email: "contact@votre-domaine.com"
+  phone: "+212 6 00 00 00 00"
+  website: "https://votre-domaine.com"
+  # Adresse légale affichée en pied d'email (obligatoire en prospection B2B)
+  legal_footer: "YourWebsiteInADay — RC 000000 — Casablanca, Maroc"
+  currency: "MAD"
+  # URL publique où sont hébergées les maquettes (ex. site Netlify). Laisser vide pour ne pas inclure de lien.
+  mockup_base_url: ""
+
+prospecting:
+  area: "Casablanca"
+  country_code: "MA"
+  # Sources : osm (gratuit, sans clé), google (clé GOOGLE_PLACES_API_KEY requise), csv (via `ywiad import`)
+  sources: ["osm"]
+  # Catégories ciblées : clé interne -> (tag OpenStreetMap, requête Google Maps)
+  categories:
+    restaurant: { osm: "amenity=restaurant", google: "restaurant" }
+    cafe: { osm: "amenity=cafe", google: "café" }
+    hairdresser: { osm: "shop=hairdresser", google: "salon de coiffure" }
+    beauty: { osm: "shop=beauty", google: "institut de beauté" }
+    bakery: { osm: "shop=bakery", google: "boulangerie pâtisserie" }
+    clothes: { osm: "shop=clothes", google: "boutique de vêtements" }
+    florist: { osm: "shop=florist", google: "fleuriste" }
+    optician: { osm: "shop=optician", google: "opticien" }
+    dentist: { osm: "amenity=dentist", google: "dentiste" }
+    hotel: { osm: "tourism=hotel", google: "hôtel" }
+    car_repair: { osm: "shop=car_repair", google: "garage automobile" }
+  max_leads_per_run: 50
+  # Inclure les commerces SANS site web (offre "création" plutôt que "refonte")
+  include_no_website: true
+
+audit:
+  timeout_seconds: 15
+  # Un site est considéré "mauvais" (donc prospect) sous ce score /100
+  bad_site_threshold: 60
+  # Optionnel : clé Google PageSpeed Insights via la variable PAGESPEED_API_KEY
+  use_pagespeed: false
+
+pricing:
+  tiers:
+    basique:
+      label: "Basique — Site vitrine express"
+      price: 2990
+      delivery: "24 h"
+      monthly: 149
+      features:
+        - "Site one-page responsive (mobile d'abord)"
+        - "Vos infos clés : horaires, adresse, carte, téléphone, WhatsApp"
+        - "HTTPS + hébergement 1 an inclus"
+        - "Référencement Google de base (Google Business Profile relié)"
+    standard:
+      label: "Standard — Site professionnel"
+      price: 6990
+      delivery: "72 h"
+      monthly: 290
+      features:
+        - "Tout le Basique"
+        - "Jusqu'à 5 pages (accueil, services/menu, galerie, avis, contact)"
+        - "Formulaire de contact + prise de rendez-vous / réservation"
+        - "SEO local avancé (balisage, vitesse, contenus optimisés)"
+        - "Rédaction des textes incluse"
+    premium:
+      label: "Premium — Site sur-mesure & vente en ligne"
+      price: 14990
+      delivery: "7 jours"
+      monthly: 590
+      features:
+        - "Tout le Standard"
+        - "Boutique en ligne ou réservation avec paiement"
+        - "Design sur-mesure + shooting photo retouché (sélection)"
+        - "Multilingue (FR / AR / EN)"
+        - "Statistiques + rapport mensuel de performance"
+  # Offre recommandée par défaut selon la catégorie (sinon "standard")
+  category_tier:
+    restaurant: standard
+    cafe: basique
+    hairdresser: standard
+    beauty: standard
+    bakery: basique
+    clothes: premium
+    florist: premium
+    optician: standard
+    dentist: standard
+    hotel: premium
+    car_repair: basique
+
+outreach:
+  # draft  : génère les emails dans out/outbox/ (aucun envoi) — RECOMMANDÉ pour démarrer
+  # smtp   : envoie réellement via SMTP (SMTP_PASSWORD en variable d'environnement)
+  mode: draft
+  daily_send_limit: 20
+  # Relances à J+N après le premier contact (puis passage en "perdu")
+  followup_days: [3, 7, 14]
+  smtp:
+    host: "smtp.votre-fournisseur.com"
+    port: 587
+    username: "contact@votre-domaine.com"
+  # Vérification des réponses par IMAP (optionnel, IMAP_PASSWORD en variable d'environnement)
+  imap:
+    enabled: false
+    host: "imap.votre-fournisseur.com"
+    port: 993
+    username: "contact@votre-domaine.com"
+
+paths:
+  database: "data/ywiad.sqlite"
+  outbox: "out/outbox"
+  mockups: "out/mockups"
+  reports: "out/reports"

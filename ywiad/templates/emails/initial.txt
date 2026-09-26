@@ -1,0 +1,39 @@
+{% if has_site or site_down %}{{ lead.name }} : {{ hook }}{% else %}{{ lead.name }} : vos clients vous cherchent sur Google{% endif %}
+---
+Bonjour,
+
+{% if has_site %}
+J'ai découvert le site de {{ lead.name }} ({{ lead.website }}) en cherchant un {{ category_label }} à {{ lead.city or "votre ville" }}. J'ai fait une analyse rapide, et plusieurs points vous font probablement perdre des clients :
+
+{% for issue in issues[:3] %}
+  • {{ issue.label }}
+{% endfor %}
+
+Note globale de votre site : {{ score }}/100.
+{% elif site_down %}
+En cherchant un {{ category_label }} à {{ lead.city or "votre ville" }}, j'ai voulu consulter le site de {{ lead.name }} ({{ lead.website }}), mais il est actuellement inaccessible. Chaque client qui tombe sur une page d'erreur part chez un concurrent — et Google finit par retirer le site de ses résultats.
+{% else %}
+En cherchant un {{ category_label }} à {{ lead.city or "votre ville" }}, j'ai trouvé {{ lead.name }}{% if lead.extra.social %} sur les réseaux sociaux{% endif %}, mais aucun site web. Aujourd'hui, la majorité des clients vérifient horaires, adresse et avis sur Google avant de se déplacer — sans site, ils vont souvent chez le concurrent.
+{% endif %}
+
+{% if mockup_url %}
+Pour vous montrer concrètement, j'ai préparé gratuitement une maquette de ce que pourrait être votre nouveau site :
+{{ mockup_url }}
+
+{% endif %}
+Nous livrons un site professionnel, rapide et adapté au mobile en un temps record :
+
+{% for t in tiers %}
+  {% if t.recommended %}→ {% else %}  {% endif %}{{ t.label }} : {{ t.price }} (livré en {{ t.delivery }}){% if t.recommended %}  ← conseillé pour vous{% endif %}
+
+{% endfor %}
+
+Seriez-vous disponible 10 minutes cette semaine pour en parler ? Vous pouvez simplement répondre à cet email ou m'écrire sur WhatsApp au {{ business.phone }}.
+
+Bien cordialement,
+{{ business.sender_name }}
+{{ business.name }} — {{ business.website }}
+
+--
+{{ business.legal_footer }}
+Vous recevez ce message car votre activité est référencée publiquement. Pour ne plus être contacté, répondez simplement « STOP ».
