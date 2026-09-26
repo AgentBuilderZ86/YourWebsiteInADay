@@ -86,7 +86,7 @@ def main(argv: list[str] | None = None) -> int:
         fu = pipeline.step_followups(db, cfg, mailer, budget)
         print({**fu, **pipeline.step_outreach(db, cfg, mailer, budget - fu["followups"])})
     elif args.cmd == "queue":
-        msgs = [{**{k: m[k] for k in ("id", "lead_id", "kind", "to_addr", "subject", "body")},
+        msgs = [{**{k: m[k] for k in ("id", "lead_id", "kind", "to_addr", "subject", "body")}, "html_body": m["html"],
                  "reply_thread_id": db.lead_thread(m["lead_id"]) if m["kind"] != "initial" else None}
                 for m in db.messages("queued")]
         if args.json:

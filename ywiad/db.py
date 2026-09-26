@@ -60,6 +60,7 @@ CREATE TABLE IF NOT EXISTS messages (
     to_addr TEXT,
     error TEXT,
     thread_id TEXT,
+    html TEXT,
     created_at TEXT NOT NULL,
     sent_at TEXT
 );
@@ -87,8 +88,9 @@ class DB:
         self.conn.executescript(SCHEMA)
         # Migration douce des bases créées avant l'ajout de colonnes
         cols = {r["name"] for r in self.conn.execute("PRAGMA table_info(messages)")}
-        if "thread_id" not in cols:
-            self.conn.execute("ALTER TABLE messages ADD COLUMN thread_id TEXT")
+        for col in ("thread_id", "html"):
+            if col not in cols:
+                self.conn.execute(f"ALTER TABLE messages ADD COLUMN {col} TEXT")
 
     # --- leads -----------------------------------------------------------
     def upsert_lead(self, lead: dict[str, Any]) -> tuple[int, bool]:
@@ -154,14 +156,14 @@ class DB:
 
     # --- messages --------------------------------------------------------
     def log_message(self, lead_id: int, kind: str, channel: str, subject: str, body: str,
-                    status: str, to_addr: str | None = None) -> int:
+                    status: str, to_addr: str | None = None, html: str | None = None) -> int:
         if status not in MESSAGE_STATUSES:
             raise ValueError(f"Statut de message inconnu : {status}")
         ts = now_iso()
         cur = self.conn.execute(
-            """INSERT INTO messages (lead_id, kind, channel, subject, body, status, to_addr, created_at, sent_at)
-               VALUES (?,?,?,?,?,?,?,?,?)""",
-            (lead_id, kind, channel, subject, body, status, to_addr, ts, ts if status == "sent" else None),
+            """INSERT INTO messages (lead_id, kind, channel, subject, body, status, to_addr, html, created_at, sent_at)
+               VALUES (?,?,?,?,?,?,?,?,?,?)""",
+            (lead_id, kind, channel, subject, body, status, to_addr, html, ts, ts if status == "sent" else None),
         )
         self.conn.commit()
         return cur.lastrowid

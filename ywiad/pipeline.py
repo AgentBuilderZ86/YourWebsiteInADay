@@ -13,8 +13,8 @@ from .audit import audit_url, best_emails, issue_dict
 from .db import DB, now_iso
 from .discover import discover, import_csv, next_combos
 from .mailer import Mailer, fetch_replies
-from .mockup import mockup_slug, write_landing, write_mockup
-from .outreach import is_optout_reply, next_followup, render_email, render_whatsapp
+from .mockup import mockup_slug, preview_path, render_previews, write_landing, write_mockup
+from .outreach import is_optout_reply, next_followup, render_email, render_email_html, render_whatsapp
 from .pricing import can_email_market, format_price, in_send_window, market, recommend_tier
 
 log = logging.getLogger("ywiad")
@@ -105,14 +105,16 @@ def step_audit(db: DB, cfg: dict[str, Any], auditor: Callable[..., Any] = audit_
 
 def step_mockups(db: DB, cfg: dict[str, Any]) -> int:
     """(Re)génère les maquettes de tous les leads actifs + la page d'accueil. Retourne le nombre de nouvelles maquettes."""
-    new = 0
+    new, paths = 0, []
     for lead in db.leads(("qualified", "contacted", "replied", "won", "no_contact", "blocked")):
         if lead["status"] == "no_contact" and lead.get("market") not in WHATSAPP_MARKETS:
             continue
         path, _ = write_mockup(lead, cfg)
+        paths.append(path)
         if not lead.get("mockup_path"):
             db.update_lead(lead["id"], mockup_path=path)
             new += 1
+    render_previews(paths)
     write_landing(cfg)
     return new
 
@@ -132,14 +134,25 @@ def _initial_subject(db: DB, lead_id: int) -> str:
     return row["subject"] if row else ""
 
 
-def _dispatch(db: DB, mailer: Mailer, lead: dict[str, Any], kind: str, subject: str, body: str) -> None:
+def preview_url(lead: dict[str, Any], cfg: dict[str, Any]) -> str | None:
+    """URL de la capture de la maquette, seulement si elle a bien été générée (sinon email sans image)."""
+    url = mockup_url(lead, cfg)
+    return f"{url}preview.png" if url and preview_path(lead, cfg).exists() else None
+
+
+def _dispatch(db: DB, cfg: dict[str, Any], mailer: Mailer, lead: dict[str, Any], kind: str,
+              original_subject: str = "") -> None:
     """Envoi direct (smtp) ou mise en file (queue) pour envoi par Claude via Gmail."""
+    url = mockup_url(lead, cfg)
+    subject, body = render_email(kind, lead, cfg, mockup_url=url, original_subject=original_subject)
+    html = render_email_html(kind, lead, cfg, mockup_url=url, preview_url=preview_url(lead, cfg),
+                             original_subject=original_subject)
     if mailer.mode == "smtp":
-        mailer.send(lead["id"], kind, lead["email"], subject, body)
-        msg_id = db.log_message(lead["id"], kind, "email", subject, body, "sent", lead["email"])
+        mailer.send(lead["id"], kind, lead["email"], subject, body, html)
+        msg_id = db.log_message(lead["id"], kind, "email", subject, body, "sent", lead["email"], html)
         confirm(db, msg_id)
     else:
-        db.log_message(lead["id"], kind, "email", subject, body, "queued", lead["email"])
+        db.log_message(lead["id"], kind, "email", subject, body, "queued", lead["email"], html)
 
 
 def _sendable(db: DB, cfg: dict[str, Any], lead: dict[str, Any], now: datetime | None) -> bool:
@@ -165,9 +178,7 @@ def step_followups(db: DB, cfg: dict[str, Any], mailer: Mailer, budget: int,
             db.update_lead(lead["id"], status="lost")
             stats["lost"] += 1
         elif due and budget > 0 and _sendable(db, cfg, lead, now):
-            subject, body = render_email(due, lead, cfg, mockup_url=mockup_url(lead, cfg),
-                                         original_subject=_initial_subject(db, lead["id"]))
-            _dispatch(db, mailer, lead, due, subject, body)
+            _dispatch(db, cfg, mailer, lead, due, original_subject=_initial_subject(db, lead["id"]))
             stats["followups"] += 1
             budget -= 1
     return stats
@@ -184,8 +195,7 @@ def step_outreach(db: DB, cfg: dict[str, Any], mailer: Mailer, budget: int,
             continue
         if budget <= 0 or not _sendable(db, cfg, lead, now):
             continue
-        subject, body = render_email("initial", lead, cfg, mockup_url=mockup_url(lead, cfg))
-        _dispatch(db, mailer, lead, "initial", subject, body)
+        _dispatch(db, cfg, mailer, lead, "initial")
         stats["emails"] += 1
         budget -= 1
     return stats

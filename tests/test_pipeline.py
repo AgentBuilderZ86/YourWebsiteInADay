@@ -231,8 +231,9 @@ def test_email_rendering_english_no_site(cfg):
             "city": "Sydney", "issues": [{"code": "no_site", "penalty": 100, "params": {}}], "score": 0,
             "recommended_tier": "standard", "extra": {}, "phone": "0400000000"}
     subject, body = render_email("initial", lead, cfg, mockup_url="https://x/y/")
-    assert subject == "Bloom & Co: your customers are looking for you on Google"
+    assert subject == "Bloom & Co: your customers are looking for you online"
     assert "no website" in body and "https://x/y/" in body and "recommended for you" in body
+    assert "No website: customers" not in body  # pas de puce redondante
     assert "1,990 AUD" in body and "Reply \"STOP\"" in body
     assert "790 AUD" in render_whatsapp(lead, cfg)
 
@@ -243,7 +244,8 @@ def test_email_rendering_site_down_fr(cfg):
             "score": 0, "recommended_tier": "basique", "extra": {}}
     subject, body = render_email("initial", lead, cfg)
     assert subject == "Garage Atlas : votre site est inaccessible"
-    assert "actuellement inaccessible" in body and "aucun site web" not in body
+    assert "ne s'affiche plus" in body and "aucun site web" not in body
+    assert "erreur 503" in body
     assert "2 990 MAD" in body and "09-08" in body
 
 
@@ -283,3 +285,28 @@ def test_followups_reuse_gmail_thread_and_confirm_is_idempotent():
     pipeline.confirm(db, m2)
     pipeline.confirm(db, m2)
     assert db.get_lead(lead_id)["followups_sent"] == 1
+
+
+def test_html_email_initial(cfg):
+    from ywiad.outreach import render_email_html
+    lead = {"id": 32, "name": "Shine Spa", "category": "beauty", "market": "FR", "website": "https://www.shinespa.fr",
+            "city": "Lyon", "score": 49, "recommended_tier": "standard", "extra": {},
+            "issues": [{"code": "bad_ssl", "penalty": 20, "params": {}}, {"code": "not_mobile", "penalty": 20, "params": {}},
+                       {"code": "no_cta", "penalty": 5, "params": {}}]}
+    html = render_email_html("initial", lead, cfg, mockup_url="https://x/demo/shine-spa-32/",
+                             preview_url="https://x/demo/shine-spa-32/preview.png")
+    assert html.startswith("<!doctype html>")
+    assert ">49</span>" in html and "À refaire" in html and "shinespa.fr" in html
+    assert 'src="https://x/demo/shine-spa-32/preview.png"' in html
+    assert "Conseillé pour vous" in html and "1 290 €" in html and "L34-5" in html
+    assert len(html.encode()) < 60_000  # Gmail tronque au-delà de ~102 Ko
+
+
+def test_html_email_followup_keeps_text_and_links(cfg):
+    from ywiad.outreach import render_email_html
+    lead = {"id": 1, "name": "Café & Co", "category": "cafe", "market": "FR", "website": "http://cafe.fr",
+            "city": "Nice", "score": 30, "recommended_tier": "basique", "extra": {},
+            "issues": [{"code": "not_mobile", "penalty": 20, "params": {}}]}
+    html = render_email_html("followup_1", lead, cfg, mockup_url="https://x/demo/cafe-1/")
+    assert "Café &amp; Co" in html and '<a href="https://x/demo/cafe-1/"' in html
+    assert "Votre maquette" in html and "<script" not in html

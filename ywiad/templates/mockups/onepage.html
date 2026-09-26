@@ -8,61 +8,93 @@
 <meta property="og:title" content="{{ lead.name }}">
 <meta property="og:description" content="{{ tagline }}">
 <meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-  :root { --accent: {{ theme.accent }}; --bg: {{ theme.bg }}; --ink: #1c1917; --muted: #57534e; }
+  :root { --accent: {{ theme.accent }}; --bg: {{ theme.bg }}; --ink: #1a1614; --muted: #5f5751; --card: #ffffff; --line: rgba(26,22,20,.08); }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.6; }
-  .banner { background: #111; color: #fff; text-align: center; font-size: .85rem; padding: .5rem 1rem; }
-  .banner a { color: #fde68a; }
-  header { max-width: 1040px; margin: 0 auto; padding: 1.25rem 1rem; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
-  .logo { font-weight: 800; font-size: 1.25rem; letter-spacing: -.02em; }
-  .btn { display: inline-block; background: var(--accent); color: #fff; padding: .8rem 1.4rem; border-radius: 999px; text-decoration: none; font-weight: 600; }
-  .btn.ghost { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
-  .hero { max-width: 1040px; margin: 0 auto; padding: 3rem 1rem 4rem; display: grid; gap: 2rem; grid-template-columns: 1.2fr 1fr; align-items: center; }
-  .hero h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.1; margin: 0 0 1rem; letter-spacing: -.03em; }
-  .hero p { color: var(--muted); font-size: 1.15rem; margin: 0 0 1.5rem; }
-  .visual { aspect-ratio: 4/3; border-radius: 24px; background: var(--accent); display: grid; place-items: center; font-size: 6rem; box-shadow: 0 30px 60px -30px var(--accent); }
-  section { max-width: 1040px; margin: 0 auto; padding: 3rem 1rem; }
-  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
-  .card { background: #fff; border-radius: 16px; padding: 1.5rem; box-shadow: 0 1px 3px #0001; }
-  .card h3 { margin: 0 0 .5rem; color: var(--accent); }
-  footer { background: #1c1917; color: #d6d3d1; padding: 2rem 1rem 5rem; text-align: center; font-size: .9rem; }
-  .actions { display: flex; flex-wrap: wrap; gap: .75rem; }
-  .wa { position: fixed; right: 1rem; bottom: 1rem; background: #25d366; color: #fff; border-radius: 999px; padding: .9rem 1.2rem; font-weight: 700; text-decoration: none; box-shadow: 0 10px 30px #0003; }
-  @media (max-width: 760px) { .hero { grid-template-columns: 1fr; padding-top: 1.5rem; } .visual { font-size: 4rem; } }
+  html { -webkit-text-size-adjust: 100%; }
+  body { margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.6; }
+  a { color: inherit; }
+  .banner { background: var(--ink); color: #fff; text-align: center; font-size: .8rem; padding: .55rem 1rem; letter-spacing: .01em; }
+  .banner a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
+  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px 0; }
+  .brand { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 1.3rem; letter-spacing: -.01em; }
+  .brand span { color: var(--accent); }
+  .pill { display: inline-flex; align-items: center; gap: .4rem; font-size: .85rem; font-weight: 600; text-decoration: none; padding: .55rem 1rem; border-radius: 999px; border: 1px solid var(--line); background: var(--card); }
+  .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; padding: 40px 0 72px; }
+  .eyebrow { font-size: .75rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 16px; }
+  h1 { font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: clamp(2.4rem, 6vw, 4.2rem); line-height: 1.02; letter-spacing: -.035em; margin: 0 0 20px; }
+  .lede { font-size: 1.1rem; color: var(--muted); max-width: 30em; margin: 0 0 28px; }
+  .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+  .btn { display: inline-flex; align-items: center; gap: .5rem; background: var(--accent); color: #fff; padding: .85rem 1.4rem; border-radius: 999px; text-decoration: none; font-weight: 600; font-size: .95rem; box-shadow: 0 10px 24px -12px var(--accent); }
+  .btn.ghost { background: transparent; color: var(--ink); box-shadow: none; border: 1px solid var(--line); background: var(--card); }
+  .visual { position: relative; aspect-ratio: 4/5; border-radius: 28px; overflow: hidden;
+    background:
+      radial-gradient(60% 50% at 20% 15%, color-mix(in srgb, var(--accent) 55%, #fff) 0%, transparent 70%),
+      radial-gradient(50% 45% at 85% 80%, color-mix(in srgb, var(--accent) 80%, #000) 0%, transparent 70%),
+      linear-gradient(160deg, color-mix(in srgb, var(--accent) 85%, #fff) 0%, var(--accent) 100%); }
+  .visual::after { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.18) 1px, transparent 1px); background-size: 18px 18px; }
+  .visual .mark { position: absolute; left: 28px; bottom: 26px; right: 28px; color: #fff; font-family: Fraunces, Georgia, serif; font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.05; letter-spacing: -.02em; z-index: 1; }
+  .chip { position: absolute; z-index: 1; display: inline-flex; align-items: center; gap: .45rem; background: rgba(255,255,255,.92); color: var(--ink); font-size: .8rem; font-weight: 600; padding: .5rem .8rem; border-radius: 999px; box-shadow: 0 8px 20px -10px rgba(0,0,0,.35); }
+  .chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
+  .c1 { top: 22px; left: 22px; } .c2 { top: 70px; right: 22px; }
+  section.block { padding: 64px 0; border-top: 1px solid var(--line); }
+  h2 { font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: clamp(1.7rem, 3.5vw, 2.4rem); letter-spacing: -.02em; margin: 0 0 28px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 24px; }
+  .card .n { font-family: Fraunces, Georgia, serif; color: var(--accent); font-size: 1.1rem; }
+  .card h3 { margin: 6px 0 6px; font-size: 1.05rem; }
+  .card p { margin: 0; color: var(--muted); font-size: .95rem; }
+  footer { padding: 36px 0 96px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); }
+  .wa { position: fixed; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: .5rem; background: #1f9d55; color: #fff; border-radius: 999px; padding: .8rem 1.1rem; font-weight: 600; font-size: .9rem; text-decoration: none; box-shadow: 0 12px 30px -10px rgba(0,0,0,.45); }
+  @media (max-width: 820px) {
+    .hero { grid-template-columns: 1fr; gap: 28px; padding: 20px 0 48px; }
+    .visual { aspect-ratio: 16/11; }
+  }
 </style>
 </head>
 <body>
 <div class="banner">{{ t.banner.format(biz=business.name, name=lead.name) }} — <a href="{{ business.website }}">{{ t.more }}</a></div>
-<header>
-  <div class="logo">{{ lead.name }}</div>
-  {% if lead.phone %}<a class="btn ghost" href="tel:{{ lead.phone.split(';')[0] | replace(' ', '') }}">{{ t.call }}</a>{% endif %}
-</header>
+<div class="wrap">
+  <header>
+    <div class="brand">{{ lead.name }}<span>.</span></div>
+    {% if lead.phone %}<a class="pill" href="tel:{{ lead.phone.split(';')[0] | replace(' ', '') }}">{{ t.call }}</a>{% endif %}
+  </header>
 
-<div class="hero">
-  <div>
-    <h1>{{ tagline }}</h1>
-    <p>{{ lead.name }}{% if lead.city %}, {{ t.in }} {{ lead.city }}{% endif %}. {{ t.intro }}</p>
-    <div class="actions">
-      {% if whatsapp %}<a class="btn" href="https://wa.me/{{ whatsapp }}">{{ cta }}</a>
-      {% elif lead.phone %}<a class="btn" href="tel:{{ lead.phone.split(';')[0] | replace(' ', '') }}">{{ cta }}</a>
-      {% elif lead.email %}<a class="btn" href="mailto:{{ lead.email }}">{{ cta }}</a>{% endif %}
-      {% if lead.address or lead.city %}<a class="btn ghost" href="https://www.google.com/maps/search/?api=1&query={{ (lead.name ~ ' ' ~ (lead.address or lead.city)) | urlencode }}">{{ t.directions }}</a>{% endif %}
+  <div class="hero">
+    <div>
+      <p class="eyebrow">{{ category_label }}{% if lead.city %} · {{ lead.city }}{% endif %}</p>
+      <h1>{{ tagline }}</h1>
+      <p class="lede">{{ t.intro }}</p>
+      <div class="actions">
+        {% if whatsapp %}<a class="btn" href="https://wa.me/{{ whatsapp }}">{{ cta }} →</a>
+        {% elif lead.phone %}<a class="btn" href="tel:{{ lead.phone.split(';')[0] | replace(' ', '') }}">{{ cta }} →</a>
+        {% elif lead.email %}<a class="btn" href="mailto:{{ lead.email }}">{{ cta }} →</a>{% endif %}
+        {% if lead.address or lead.city %}<a class="btn ghost" href="https://www.google.com/maps/search/?api=1&query={{ (lead.name ~ ' ' ~ (lead.address or lead.city)) | urlencode }}">{{ t.directions }}</a>{% endif %}
+      </div>
+    </div>
+    <div class="visual" aria-hidden="true">
+      <span class="chip c1"><i></i>{{ t.chip_booking }}</span>
+      <span class="chip c2"><i></i>{{ lead.city or t.chip_local }}</span>
+      <div class="mark">{{ lead.name }}</div>
     </div>
   </div>
-  <div class="visual" aria-hidden="true">{{ theme.icon }}</div>
+
+  <section class="block">
+    <h2>{{ t.why }}</h2>
+    <div class="grid">
+      <div class="card"><div class="n">01</div><h3>{{ t.services }}</h3><p>{{ t.services_txt }}</p></div>
+      <div class="card"><div class="n">02</div><h3>{{ t.hours }}</h3><p>{{ hours or t.hours_txt }}</p></div>
+      <div class="card"><div class="n">03</div><h3>{{ t.find }}</h3><p>{{ lead.address or lead.city or t.find_txt }}</p></div>
+      <div class="card"><div class="n">04</div><h3>{{ t.reviews }}</h3><p>{{ t.reviews_txt }}</p></div>
+    </div>
+  </section>
+
+  <footer>© {{ lead.name }} · {{ t.made }} {{ business.name }}</footer>
 </div>
-
-<section>
-  <div class="cards">
-    <div class="card"><h3>{{ t.services }}</h3><p>{{ t.services_txt }}</p></div>
-    <div class="card"><h3>{{ t.hours }}</h3><p>{{ hours or t.hours_txt }}</p></div>
-    <div class="card"><h3>{{ t.find }}</h3><p>{{ lead.address or lead.city or t.find_txt }}</p></div>
-    <div class="card"><h3>{{ t.reviews }}</h3><p>{{ t.reviews_txt }}</p></div>
-  </div>
-</section>
-
-<footer>© {{ lead.name }} — {{ t.made }} {{ business.name }}</footer>
 {% if whatsapp %}<a class="wa" href="https://wa.me/{{ whatsapp }}">WhatsApp</a>{% endif %}
 </body>
 </html>

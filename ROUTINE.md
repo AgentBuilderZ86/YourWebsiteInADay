@@ -85,8 +85,10 @@ la racine du dépôt). Vérifier ensuite qu'une maquette en file répond en 200.
 - langue cohérente avec le pays ; pas de caractères cassés ; lien de maquette présent ;
 - sinon : `ywiad fail <id> --reason "écarté à la relecture"` et `ywiad mark <lead_id> lost`.
 
-Envoi : Gmail `send_message` avec `to: [to_addr]`, `subject`, `body` (texte brut, tel quel) et,
-si `reply_thread_id` est renseigné, `replyThreadId`. Puis immédiatement :
+Envoi : Gmail `send_message` avec `to: [to_addr]`, `subject`, `htmlBody: html_body` (version mise en
+page), `body` (version texte, alternative obligatoire — les deux tels quels, sans retouche) et, si
+`reply_thread_id` est renseigné, `replyThreadId`. Avant le premier envoi de la session, vérifier que
+l'image `…/preview.png` d'un message en file répond en 200 (sinon ne pas envoyer : redéployer). Puis :
 
 ```bash
 ywiad confirm <id> --thread <threadId renvoyé par Gmail>

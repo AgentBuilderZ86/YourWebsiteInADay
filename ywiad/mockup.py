@@ -2,7 +2,12 @@
 
 from __future__ import annotations
 
+import json
+import logging
+import os
 import re
+import shutil
+import subprocess
 import unicodedata
 from pathlib import Path
 from typing import Any
@@ -10,6 +15,8 @@ from typing import Any
 from jinja2 import Environment, PackageLoader, select_autoescape
 
 from .pricing import enabled_markets, market, pricing_table
+
+log = logging.getLogger("ywiad")
 
 _env = Environment(
     loader=PackageLoader("ywiad", "templates"),
@@ -56,6 +63,8 @@ STRINGS = {
         "hours": "Horaires", "hours_txt": "Horaires à compléter", "find": "Nous trouver", "find_txt": "Adresse à compléter",
         "reviews": "Avis clients", "reviews_txt": "Vos meilleurs avis Google mis en avant pour rassurer les nouveaux clients.",
         "made": "Site réalisé en 24 h par",
+        "why": "Tout ce que vos clients cherchent, au même endroit", "chip_booking": "Réservation en ligne",
+        "chip_local": "Près de chez vous",
     },
     "en": {
         "banner": "Demo mock-up made by {biz} for {name}", "more": "learn more",
@@ -64,6 +73,8 @@ STRINGS = {
         "hours": "Opening hours", "hours_txt": "Opening hours to be added", "find": "Find us", "find_txt": "Address to be added",
         "reviews": "Reviews", "reviews_txt": "Your best Google reviews, front and centre to reassure new customers.",
         "made": "Website built in 24 hours by",
+        "why": "Everything your customers look for, in one place", "chip_booking": "Online booking",
+        "chip_local": "Near you",
     },
 }
 
@@ -102,6 +113,7 @@ def render_mockup(lead: dict[str, Any], cfg: dict[str, Any]) -> str:
     tagline, cta = theme[lang]
     return _env.get_template("mockups/onepage.html").render(
         lead=lead, theme=theme, tagline=tagline, cta=cta, lang=lang, t=STRINGS[lang],
+        category_label=cfg["prospecting"]["categories"].get(lead.get("category") or "", {}).get(lang, ""),
         hours=lead.get("extra", {}).get("opening_hours"),
         whatsapp=whatsapp_number(lead.get("phone"), m.get("country_code")),
         business=cfg["business"],
@@ -135,3 +147,31 @@ def write_landing(cfg: dict[str, Any]) -> str:
         '[build]\n  publish = "."\n  command = ""\n\n[[headers]]\n  for = "/demo/*"\n'
         '  [headers.values]\n    X-Robots-Tag = "noindex"\n', encoding="utf-8")
     return str(out / "index.html")
+
+
+def render_previews(html_paths: list[str]) -> int:
+    """Capture (preview.png, format mobile) de chaque maquette qui n'en a pas encore.
+
+    Utilise Playwright côté Node (préinstallé dans l'environnement cloud). Sans Node/Playwright,
+    les emails partent simplement sans image.
+    """
+    jobs = [[str(Path(h).resolve()), str(Path(h).resolve().with_name("preview.png"))]
+            for h in html_paths if not Path(h).with_name("preview.png").exists()]
+    if not jobs or not shutil.which("node"):
+        return 0
+    env = dict(os.environ)
+    try:
+        root = subprocess.run(["npm", "root", "-g"], capture_output=True, text=True, timeout=30).stdout.strip()
+        env["NODE_PATH"] = root + (os.pathsep + env["NODE_PATH"] if env.get("NODE_PATH") else "")
+        out = subprocess.run(["node", str(Path(__file__).with_name("screenshot.js")), json.dumps(jobs)],
+                             capture_output=True, text=True, timeout=60 + 10 * len(jobs), env=env)
+    except (OSError, subprocess.SubprocessError) as exc:
+        log.warning("captures impossibles : %s", exc)
+        return 0
+    if out.returncode:
+        log.warning("captures impossibles : %s", out.stderr.strip()[:300])
+    return out.stdout.count("ok ")
+
+
+def preview_path(lead: dict[str, Any], cfg: dict[str, Any]) -> Path:
+    return Path(cfg["paths"]["mockups"]) / mockup_slug(lead) / "preview.png"

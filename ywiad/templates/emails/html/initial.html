@@ -1,0 +1,135 @@
+{% extends "emails/html/_layout.html" %}
+{% block content %}
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+  <!-- Accroche -->
+  <tr>
+    <td class="px" style="padding:36px 40px 8px; font-family:{{ f.sans }}; font-size:15px; line-height:24px; color:{{ c.ink }};">
+      <p style="margin:0 0 14px;">{{ s.hello }}</p>
+      <p style="margin:0;">{{ intro }}</p>
+    </td>
+  </tr>
+
+  <!-- Carte d'audit -->
+  <tr>
+    <td class="px" style="padding:24px 40px 8px;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background:{{ c.soft }}; border-radius:14px;">
+        <tr>
+          <td style="padding:22px 24px 6px; font-family:{{ f.sans }}; font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:{{ c.muted }};">
+            {{ s.audit_label }}{% if host %} · {{ host }}{% endif %}
+          </td>
+        </tr>
+        {% if has_site %}
+        <tr>
+          <td style="padding:4px 24px 0;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              <tr>
+                <td valign="bottom" style="font-family:{{ f.serif }}; color:{{ score_color }};">
+                  <span class="score" style="font-size:56px; line-height:56px; letter-spacing:-2px;">{{ score }}</span><span style="font-size:20px; color:{{ c.muted }};">&nbsp;/100</span>
+                </td>
+                <td valign="bottom" align="right" style="font-family:{{ f.sans }}; font-size:13px; line-height:18px; color:{{ score_color }}; font-weight:600; padding-bottom:6px;">{{ verdict }}</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding:14px 24px 4px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-radius:4px;">
+              <tr>
+                {% if score > 0 %}<td width="{{ score }}%" height="6" style="height:6px; font-size:0; line-height:0; background:{{ score_color }}; border-radius:4px 0 0 4px;">&nbsp;</td>{% endif %}
+                <td height="6" style="height:6px; font-size:0; line-height:0; background:{{ c.line }}; border-radius:{% if score > 0 %}0 4px 4px 0{% else %}4px{% endif %};">&nbsp;</td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+        {% else %}
+        <tr>
+          <td style="padding:4px 24px 0; font-family:{{ f.serif }}; font-size:24px; line-height:30px; color:{{ c.danger }};">{{ headline_problem }}</td>
+        </tr>
+        {% endif %}
+        {% if not has_site and not site_down %}
+        <tr>
+          <td style="padding:8px 24px 22px; font-family:{{ f.sans }}; font-size:14px; line-height:22px; color:{{ c.muted }};">{{ s.no_site_text }}</td>
+        </tr>
+        {% else %}
+        <tr>
+          <td style="padding:14px 24px 20px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+              {% for issue in issues[:3] %}
+              <tr>
+                <td width="18" valign="top" style="padding:7px 0 7px; font-size:0; line-height:0;">
+                  <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr><td width="8" height="8" style="width:8px; height:8px; border-radius:4px; background:{{ c.danger if issue.penalty >= 15 else c.warn }}; font-size:0; line-height:0;">&nbsp;</td></tr></table>
+                </td>
+                <td style="padding:3px 0; font-family:{{ f.sans }}; font-size:14px; line-height:21px; color:{{ c.ink }};">{{ issue.label }}</td>
+              </tr>
+              {% endfor %}
+            </table>
+          </td>
+        </tr>
+        {% endif %}
+      </table>
+    </td>
+  </tr>
+
+  <!-- Maquette -->
+  {% if mockup_url %}
+  <tr>
+    <td class="px" style="padding:30px 40px 0;">
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          {% if preview_url %}
+          <td class="stack" width="220" valign="top" align="center" style="padding:0 0 18px;">
+            <a href="{{ mockup_url }}" style="display:inline-block;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="border-radius:30px; background:{{ c.ink }};">
+                <tr><td style="padding:9px;">
+                  <img src="{{ preview_url }}" width="186" alt="{{ s.preview_alt }} {{ lead.name }}" style="display:block; width:186px; max-width:186px; height:auto; border:0; border-radius:22px;">
+                </td></tr>
+              </table>
+            </a>
+          </td>
+          <td class="stack" width="24" style="font-size:0;">&nbsp;</td>
+          {% endif %}
+          <td class="stack" valign="middle" style="font-family:{{ f.sans }}; font-size:15px; line-height:24px; color:{{ c.ink }};">
+            <p style="margin:0 0 6px; font-family:{{ f.sans }}; font-size:11px; letter-spacing:1.6px; text-transform:uppercase; color:{{ c.accent }};">{{ s.mockup_kicker }}</p>
+            <p class="h1" style="margin:0 0 10px; font-family:{{ f.serif }}; font-size:28px; line-height:33px; letter-spacing:-0.5px; color:{{ c.ink }};">{{ s.mockup_title }}</p>
+            <p style="margin:0 0 20px; color:{{ c.muted }};">{{ s.mockup_text.format(name=lead.name) }}</p>
+            <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+              <tr><td style="border-radius:999px; background:{{ c.ink }};">
+                <a href="{{ mockup_url }}" style="display:inline-block; padding:13px 24px; font-family:{{ f.sans }}; font-size:14px; font-weight:600; color:#ffffff; border-radius:999px;">{{ s.mockup_cta }} &rarr;</a>
+              </td></tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  {% endif %}
+
+  <!-- Formules -->
+  <tr>
+    <td class="px" style="padding:36px 40px 0;">
+      <p style="margin:0 0 4px; font-family:{{ f.serif }}; font-size:22px; line-height:28px; color:{{ c.ink }};">{{ s.plans_title }}</p>
+      <p style="margin:0 0 16px; font-family:{{ f.sans }}; font-size:14px; line-height:21px; color:{{ c.muted }};">{{ s.plans_text }}</p>
+      {% for t in tiers %}
+      <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 10px; border-radius:12px; border:{% if t.recommended %}2px solid {{ c.accent }}{% else %}1px solid {{ c.line }}{% endif %};">
+        <tr>
+          <td style="padding:14px 18px; font-family:{{ f.sans }};">
+            <span style="font-size:15px; font-weight:600; color:{{ c.ink }};">{{ t.short }}</span>
+            {% if t.recommended %}<span style="display:inline-block; margin-left:8px; padding:2px 9px; border-radius:999px; background:{{ c.accent }}; color:#ffffff; font-size:11px; font-weight:600; letter-spacing:0.3px; vertical-align:2px;">{{ s.recommended }}</span>{% endif %}
+            <br><span style="font-size:13px; line-height:20px; color:{{ c.muted }};">{{ t.label.split(' — ')[1] if ' — ' in t.label else '' }} · <span style="white-space:nowrap;">{{ s.delivery }} {{ t.delivery }}</span></span>
+          </td>
+          <td align="right" valign="middle" style="padding:14px 18px; font-family:{{ f.serif }}; font-size:20px; color:{{ c.ink }}; white-space:nowrap;">{{ t.price }}</td>
+        </tr>
+      </table>
+      {% endfor %}
+    </td>
+  </tr>
+
+  <!-- Appel à l'action -->
+  <tr>
+    <td class="px" style="padding:26px 40px 36px; font-family:{{ f.sans }}; font-size:15px; line-height:24px; color:{{ c.ink }};">
+      <p style="margin:0 0 22px;">{{ s.closing }}</p>
+      {% include "emails/html/_signature.html" %}
+    </td>
+  </tr>
+</table>
+{% endblock %}

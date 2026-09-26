@@ -1,34 +1,32 @@
-{% if has_site or site_down %}{{ lead.name }} : {{ hook }}{% else %}{{ lead.name }} : vos clients vous cherchent sur Google{% endif %}
+{% if has_site or site_down %}{{ lead.name }} : {{ hook }}{% else %}{{ lead.name }} : vos clients vous cherchent en ligne{% endif %}
 ---
 Bonjour,
 
-{% if has_site %}
-J'ai découvert le site de {{ lead.name }} ({{ lead.website }}) en cherchant un {{ category_label }} à {{ lead.city or "votre ville" }}. Une analyse rapide montre plusieurs points qui vous font probablement perdre des clients :
+{{ intro }}
 
+{% if has_site or site_down %}
 {% for issue in issues[:3] %}
   • {{ issue.label }}
 {% endfor %}
+{% endif %}
+{% if has_site %}
 
 Note globale de votre site : {{ score }}/100.
-{% elif site_down %}
-En cherchant un {{ category_label }} à {{ lead.city or "votre ville" }}, j'ai voulu consulter le site de {{ lead.name }} ({{ lead.website }}), mais {% if issues[0].code == 'expired' %}le nom de domaine ne répond plus — il a probablement expiré{% else %}il est actuellement inaccessible{% endif %}. Chaque client qui tombe sur une page d'erreur part chez un concurrent — et Google finit par retirer le site de ses résultats.
-{% else %}
-En cherchant un {{ category_label }} à {{ lead.city or "votre ville" }}, j'ai trouvé {{ lead.name }}, mais aucun site web. Aujourd'hui, la majorité des clients vérifient horaires, adresse et avis sur Google avant de se déplacer — sans site, ils vont souvent chez le concurrent.
 {% endif %}
 
 {% if mockup_url %}
-Pour vous montrer concrètement, j'ai préparé gratuitement une maquette de ce que pourrait être votre nouveau site :
+J'ai conçu gratuitement une première version de votre nouveau site — pensée pour le mobile, rapide, avec prise de contact en un geste. Elle est en ligne :
 {{ mockup_url }}
 
 {% endif %}
-Nous livrons un site professionnel, rapide et adapté au mobile en un temps record :
+Nos formules, clé en main (design, textes, mise en ligne, hébergement et HTTPS compris) :
 
 {% for t in tiers %}
   {% if t.recommended %}→ {% else %}  {% endif %}{{ t.label }} : {{ t.price }} (livré en {{ t.delivery }}){% if t.recommended %}  ← conseillé pour vous{% endif %}
 
 {% endfor %}
 
-Seriez-vous disponible 10 minutes cette semaine pour en parler ? Il suffit de répondre à cet email.
+Si le rendu vous plaît, je vous propose un échange de 10 minutes cette semaine pour l'adapter à votre activité. Il suffit de répondre à cet email.
 
 Bien cordialement,
 {% include "emails/fr/_signature.txt" %}

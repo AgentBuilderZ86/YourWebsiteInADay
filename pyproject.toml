@@ -15,4 +15,4 @@ ywiad = "ywiad.cli:main"
 include = ["ywiad*"]
 
 [tool.setuptools.package-data]
-ywiad = ["templates/**/*"]
+ywiad = ["templates/**/*", "screenshot.js"]

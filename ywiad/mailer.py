@@ -13,7 +13,7 @@ from email.utils import make_msgid, parseaddr
 from typing import Any
 
 
-def build_message(cfg: dict[str, Any], to: str, subject: str, body: str) -> EmailMessage:
+def build_message(cfg: dict[str, Any], to: str, subject: str, body: str, html: str | None = None) -> EmailMessage:
     b = cfg["business"]
     msg = EmailMessage()
     msg["From"] = f"{b['sender_name']} <{b['sender_email']}>"
@@ -22,6 +22,8 @@ def build_message(cfg: dict[str, Any], to: str, subject: str, body: str) -> Emai
     msg["Message-ID"] = make_msgid(domain=b["sender_email"].split("@")[-1])
     msg["List-Unsubscribe"] = f"<mailto:{b['sender_email']}?subject=STOP>"
     msg.set_content(body)
+    if html:
+        msg.add_alternative(html, subtype="html")
     return msg
 
 
@@ -30,7 +32,7 @@ class Mailer:
         self.cfg = cfg
         self.mode = cfg["outreach"].get("mode", "queue")
 
-    def send(self, lead_id: int, kind: str, to: str, subject: str, body: str) -> None:
+    def send(self, lead_id: int, kind: str, to: str, subject: str, body: str, html: str | None = None) -> None:
         """Envoi SMTP direct (mode smtp). En mode queue, c'est Claude qui envoie via Gmail."""
         s = self.cfg["outreach"]["smtp"]
         password = os.environ.get("SMTP_PASSWORD")
@@ -39,7 +41,7 @@ class Mailer:
         with smtplib.SMTP(s["host"], s.get("port", 587), timeout=30) as smtp:
             smtp.starttls()
             smtp.login(s["username"], password)
-            smtp.send_message(build_message(self.cfg, to, subject, body))
+            smtp.send_message(build_message(self.cfg, to, subject, body, html))
 
 
 def fetch_replies(cfg: dict[str, Any], since_days: int = 30) -> list[tuple[str, str]]:

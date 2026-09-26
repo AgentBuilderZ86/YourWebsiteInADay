@@ -1,0 +1,14 @@
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top:6px;">
+  <tr>
+    <td valign="middle" style="padding-right:14px;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0"><tr>
+        <td width="44" height="44" align="center" valign="middle" style="width:44px; height:44px; border-radius:22px; background:{{ c.ink }}; color:#ffffff; font-family:{{ f.serif }}; font-size:16px; letter-spacing:0.5px;">{{ business.sender_name[:2] }}</td>
+      </tr></table>
+    </td>
+    <td valign="middle" style="font-family:{{ f.sans }}; font-size:14px; line-height:20px; color:{{ c.ink }};">
+      <strong>{{ business.sender_name }}</strong> · {{ business.name }}<br>
+      <a href="{{ business.website }}" style="color:{{ c.muted }};">{{ business.website | replace('https://', '') }}</a>
+      &nbsp;·&nbsp;<a href="https://wa.me/{{ business.whatsapp }}" style="color:{{ c.muted }};">WhatsApp {{ business.phone }}</a>
+    </td>
+  </tr>
+</table>

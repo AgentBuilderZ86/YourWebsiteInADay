@@ -5,13 +5,74 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
-from jinja2 import Environment, PackageLoader
+import re
+from urllib.parse import urlparse
+
+from jinja2 import Environment, PackageLoader, select_autoescape
+from markupsafe import Markup, escape
 
 from .audit import issue_label
 from .pricing import market, pricing_table
 
 _env = Environment(loader=PackageLoader("ywiad", "templates"), autoescape=False,
                    trim_blocks=True, lstrip_blocks=True, keep_trailing_newline=True)
+_html_env = Environment(loader=PackageLoader("ywiad", "templates"), autoescape=select_autoescape(["html"]),
+                        trim_blocks=True, lstrip_blocks=True)
+
+# Charte des emails HTML : papier chaud, encre, un accent indigo
+COLORS = {"bg": "#f3efe9", "card": "#ffffff", "soft": "#f7f4ef", "ink": "#1a1614", "muted": "#6b625c",
+          "faint": "#9a918a", "line": "#e8e2da", "accent": "#4338ca", "danger": "#c92a2a", "warn": "#e67700"}
+FONTS = {"serif": "Georgia, 'Times New Roman', serif",
+         "sans": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif"}
+
+STRINGS = {
+    "fr": {
+        "hello": "Bonjour,",
+        "tagline": "Studio web · sites livrés en 24 h",
+        "intro_site": "J'ai découvert le site de {name} en cherchant un {cat} à {city}. Je conçois des sites pour les commerces indépendants, alors j'ai pris quelques minutes pour l'analyser : voici ce qu'un client voit en arrivant — et ce qui le fait souvent repartir.",
+        "intro_down": "En cherchant un {cat} à {city}, j'ai voulu consulter le site de {name} ({host})… mais il ne s'affiche plus. Chaque client qui tombe sur une erreur part chez un concurrent, et Google finit par retirer le site de ses résultats.",
+        "intro_none": "En cherchant un {cat} à {city}, j'ai trouvé {name}, mais aucun site web. Aujourd'hui, la plupart des clients vérifient horaires, adresse et avis en ligne avant de se déplacer — sans site, ils choisissent souvent un concurrent.",
+        "audit_label": "Audit express",
+        "verdicts": ("Critique", "À refaire", "À moderniser"),
+        "problem": {"no_site": "Aucun site web trouvé", "expired": "Votre site a disparu d'internet", "down": "Votre site ne s'affiche plus"},
+        "mockup_kicker": "Votre maquette",
+        "mockup_title": "Votre nouveau site est déjà prêt",
+        "mockup_text": "J'ai conçu gratuitement une première version du site de {name} : pensée pour le mobile, rapide, avec prise de contact et itinéraire en un geste. Elle est en ligne, prête à être personnalisée.",
+        "mockup_cta": "Voir la maquette",
+        "preview_alt": "Aperçu du futur site de",
+        "plans_title": "Nos formules",
+        "plans_text": "Clé en main : design, textes, mise en ligne, hébergement et HTTPS compris.",
+        "recommended": "Conseillé pour vous",
+        "delivery": "livré en",
+        "closing": "Si le rendu vous plaît, je vous propose un échange de 10 minutes cette semaine pour l'adapter à votre activité. Il suffit de répondre à cet email.",
+        "preheader_site": "Votre site obtient {score}/100 — une maquette de votre nouveau site vous attend.",
+        "preheader_none": "Une maquette de votre futur site vous attend, gratuitement.",
+        "no_site_text": "Sur Google, vos clients ne trouvent ni vos horaires, ni vos services, ni un moyen simple de vous contacter ou de réserver.",
+    },
+    "en": {
+        "hello": "Hi,",
+        "tagline": "Web studio · websites live in 24 hours",
+        "intro_site": "I came across {name}'s website while looking for a {cat} in {city}. I design websites for independent businesses, so I took a few minutes to review it: here's what a customer sees when they land — and what often makes them leave.",
+        "intro_down": "While looking for a {cat} in {city}, I tried to visit {name}'s website ({host})… but it no longer loads. Every customer who hits an error goes to a competitor, and Google eventually drops the site from its results.",
+        "intro_none": "While looking for a {cat} in {city}, I found {name} but no website. Most customers now check opening hours, location and reviews online before visiting — without a site, many pick a competitor.",
+        "audit_label": "Quick audit",
+        "verdicts": ("Critical", "Needs a rebuild", "Needs updating"),
+        "problem": {"no_site": "No website found", "expired": "Your website has vanished", "down": "Your website no longer loads"},
+        "mockup_kicker": "Your mock-up",
+        "mockup_title": "Your new website is already built",
+        "mockup_text": "I designed a free first version of {name}'s website: mobile-first, fast, with one-tap contact and directions. It's live and ready to be tailored to you.",
+        "mockup_cta": "View the mock-up",
+        "preview_alt": "Preview of the new website for",
+        "plans_title": "Our packages",
+        "plans_text": "Turnkey: design, copy, launch, hosting and HTTPS included.",
+        "recommended": "Recommended for you",
+        "delivery": "live in",
+        "closing": "If you like it, let's have a 10-minute chat this week to tailor it to your business. Just reply to this email.",
+        "preheader_site": "Your website scores {score}/100 — a mock-up of your new site is waiting.",
+        "preheader_none": "A free mock-up of your future website is waiting for you.",
+        "no_site_text": "On Google, customers can't find your hours, your services, or an easy way to contact you or book.",
+    },
+}
 
 # Accroches courtes (objet d'email, relance, WhatsApp) selon le problème le plus grave
 HOOKS = {
@@ -55,7 +116,15 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
     has_site = bool(lead.get("website")) and not site_down and "no_site" not in codes
     hooks = HOOKS[lang]
     cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {})
+    s = STRINGS[lang]
+    host = urlparse(lead["website"]).netloc.removeprefix("www.") if lead.get("website") else ""
+    fmt = {"name": lead["name"], "cat": cat.get(lang) or ("commerce" if lang == "fr" else "business"),
+           "city": lead.get("city") or ("votre ville" if lang == "fr" else "your area"), "host": host}
+    intro = s["intro_site" if has_site else "intro_down" if site_down else "intro_none"].format(**fmt)
     return {
+        "intro": intro,
+        "host": host,
+        "lang": lang,
         "lead": lead,
         "business": cfg["business"],
         "market": m,
@@ -81,6 +150,43 @@ def render_email(kind: str, lead: dict[str, Any], cfg: dict[str, Any], *,
     # trim_blocks peut coller le séparateur à la ligne du sujet : on découpe sur "---\n"
     subject, _, body = raw.partition("---\n")
     return subject.strip(), body.strip() + "\n"
+
+
+def _linkify(text: str) -> Markup:
+    """Liens cliquables, affichés sans « https:// » ni barre finale (plus lisible)."""
+    def link(m: re.Match) -> str:
+        url = m.group(1)
+        label = re.sub(r"^https?://", "", url).rstrip("/")
+        return f'<a href="{url}" style="color:#1a1614; text-decoration:underline;">{label}</a>'
+    return Markup(re.sub(r"(https?://[^\s<]+)", link, str(escape(text))))
+
+
+def render_email_html(kind: str, lead: dict[str, Any], cfg: dict[str, Any], *, mockup_url: str | None = None,
+                      preview_url: str | None = None, original_subject: str = "") -> str:
+    """Version HTML (mise en page soignée) ; la version texte reste l'alternative."""
+    ctx = _context(lead, cfg, mockup_url)
+    lang = ctx["lang"]
+    s = STRINGS[lang]
+    subject, text = render_email(kind, lead, cfg, mockup_url=mockup_url, original_subject=original_subject)
+    ctx.update(c=COLORS, f=FONTS, s=s, subject=subject, preview_url=preview_url if mockup_url else None)
+    if kind == "initial":
+        score = ctx["score"] or 0
+        ctx["score"] = score
+        ctx["score_color"] = COLORS["danger"] if score < 40 else COLORS["warn"]
+        ctx["verdict"] = s["verdicts"][0 if score < 30 else 1 if score < 50 else 2]
+        codes = [i["code"] for i in ctx["issues"]]
+        ctx["headline_problem"] = next((s["problem"][c] for c in codes if c in s["problem"]), s["problem"]["no_site"])
+        ctx["preheader"] = (s["preheader_site"].format(score=score) if ctx["has_site"] else s["preheader_none"])
+        return _html_env.get_template("emails/html/initial.html").render(**ctx)
+    # Relances : le texte (volontairement personnel) mis en page, sans la signature texte
+    sender = cfg["business"]["sender_name"].strip()
+    lines = text.split("\n")
+    if sender in (l.strip() for l in lines):
+        lines = lines[:[l.strip() for l in lines].index(sender)]
+    paragraphs = [" ".join(p.split("\n")).strip() for p in "\n".join(lines).split("\n\n") if p.strip()]
+    ctx.update(paragraphs=[_linkify(p) for p in paragraphs], show_mockup=kind != "followup_3",
+               preheader=paragraphs[1] if len(paragraphs) > 1 else "")
+    return _html_env.get_template("emails/html/followup.html").render(**ctx)
 
 
 def render_whatsapp(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None = None) -> str:
