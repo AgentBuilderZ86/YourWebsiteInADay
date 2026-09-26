@@ -63,11 +63,12 @@ def pricing_table(cfg: dict[str, Any], market_code: str | None, recommended: str
 
 
 def in_send_window(cfg: dict[str, Any], market_code: str | None, now: datetime | None = None) -> bool:
-    """Vrai si c'est un jour ouvré, en heures de bureau, chez le destinataire."""
+    """Vrai si c'est un jour d'envoi, en heures de bureau, chez le destinataire."""
     m = market(cfg, market_code)
     now = (now or datetime.now(timezone.utc)).astimezone(ZoneInfo(m.get("timezone", "UTC")))
     start, end = cfg["outreach"].get("send_window", [8, 18])
-    return now.weekday() < 5 and start <= now.hour < end
+    days = cfg["outreach"].get("send_weekdays", [0, 1, 2, 3, 4])
+    return now.weekday() in days and start <= now.hour < end
 
 
 def can_email_market(cfg: dict[str, Any], market_code: str | None) -> tuple[bool, str]:

@@ -194,6 +194,8 @@ outreach:
   daily_send_limit: 25
   # Heures locales du destinataire pendant lesquelles on envoie (jours ouvrés uniquement)
   send_window: [8, 18]
+  # Jours d'envoi (0 = lundi … 6 = dimanche) : les commerçants travaillent le samedi
+  send_weekdays: [0, 1, 2, 3, 4, 5]
   followup_days: [3, 7, 14]
   smtp:
     host: "smtp.gmail.com"
