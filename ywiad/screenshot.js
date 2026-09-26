@@ -10,7 +10,7 @@ const { chromium } = require('playwright');
       await page.goto('file://' + html, { waitUntil: 'load', timeout: 15000 });
       // Le bandeau "maquette de démonstration" n'a pas sa place dans l'aperçu
       await page.evaluate(() => { document.querySelectorAll('.banner, .wa').forEach(el => el.remove()); });
-      await page.screenshot({ path: png, type: 'png' });
+      await page.screenshot({ path: png, type: 'jpeg', quality: 82 });
       console.log('ok ' + png);
     } catch (e) {
       console.log('ko ' + png + ' ' + e.message);

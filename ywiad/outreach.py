@@ -29,15 +29,15 @@ STRINGS = {
     "fr": {
         "hello": "Bonjour,",
         "tagline": "Studio web · sites livrés en 24 h",
-        "intro_site": "J'ai découvert le site de {name} en cherchant un {cat} à {city}. Je conçois des sites pour les commerces indépendants, alors j'ai pris quelques minutes pour l'analyser : voici ce qu'un client voit en arrivant — et ce qui le fait souvent repartir.",
-        "intro_down": "En cherchant un {cat} à {city}, j'ai voulu consulter le site de {name} ({host})… mais il ne s'affiche plus. Chaque client qui tombe sur une erreur part chez un concurrent, et Google finit par retirer le site de ses résultats.",
+        "intro_site": "J'ai découvert le site {de_name} en cherchant un {cat} à {city}. Je conçois des sites pour les commerces indépendants, alors j'ai pris quelques minutes pour l'analyser : voici ce qu'un client voit en arrivant — et ce qui le fait souvent repartir.",
+        "intro_down": "En cherchant un {cat} à {city}, j'ai voulu consulter le site {de_name} ({host})… mais il ne s'affiche plus. Chaque client qui tombe sur une erreur part chez un concurrent, et Google finit par retirer le site de ses résultats.",
         "intro_none": "En cherchant un {cat} à {city}, j'ai trouvé {name}, mais aucun site web. Aujourd'hui, la plupart des clients vérifient horaires, adresse et avis en ligne avant de se déplacer — sans site, ils choisissent souvent un concurrent.",
         "audit_label": "Audit express",
         "verdicts": ("Critique", "À refaire", "À moderniser"),
         "problem": {"no_site": "Aucun site web trouvé", "expired": "Votre site a disparu d'internet", "down": "Votre site ne s'affiche plus"},
         "mockup_kicker": "Votre maquette",
         "mockup_title": "Votre nouveau site est déjà prêt",
-        "mockup_text": "J'ai conçu gratuitement une première version du site de {name} : pensée pour le mobile, rapide, avec prise de contact et itinéraire en un geste. Elle est en ligne, prête à être personnalisée.",
+        "mockup_text": "J'ai conçu gratuitement une première version du site {de_name} : pensée pour le mobile, rapide, avec prise de contact et itinéraire en un geste. Elle est en ligne, prête à être personnalisée.",
         "mockup_cta": "Voir la maquette",
         "preview_alt": "Aperçu du futur site de",
         "plans_title": "Nos formules",
@@ -105,6 +105,12 @@ HOOKS = {
 }
 
 
+def de_name(name: str) -> str:
+    """Préposition « de » avec élision devant voyelle ou h muet : « d'Institut », « de Shine Spa »."""
+    first = name.lstrip()[:1].lower()
+    return f"d'{name}" if first and first in "aeiouyhâàéèêîïôûœ" else f"de {name}"
+
+
 def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) -> dict[str, Any]:
     m = market(cfg, lead.get("market"))
     lang = m.get("language", "fr")
@@ -118,11 +124,12 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
     cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {})
     s = STRINGS[lang]
     host = urlparse(lead["website"]).netloc.removeprefix("www.") if lead.get("website") else ""
-    fmt = {"name": lead["name"], "cat": cat.get(lang) or ("commerce" if lang == "fr" else "business"),
+    fmt = {"name": lead["name"], "de_name": de_name(lead["name"]), "cat": cat.get(lang) or ("commerce" if lang == "fr" else "business"),
            "city": lead.get("city") or ("votre ville" if lang == "fr" else "your area"), "host": host}
     intro = s["intro_site" if has_site else "intro_down" if site_down else "intro_none"].format(**fmt)
     return {
         "intro": intro,
+        "de_name": de_name(lead["name"]),
         "host": host,
         "lang": lang,
         "lead": lead,

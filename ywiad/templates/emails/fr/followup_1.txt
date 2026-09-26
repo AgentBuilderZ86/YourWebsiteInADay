@@ -2,7 +2,7 @@ Re: {{ original_subject }}
 ---
 Bonjour,
 
-Je me permets de revenir vers vous au sujet du site de {{ lead.name }}.{% if mockup_url %} La maquette est toujours en ligne ici : {{ mockup_url }}{% endif %}
+Je me permets de revenir vers vous au sujet du site {{ de_name }}.{% if mockup_url %} La maquette est toujours en ligne ici : {{ mockup_url }}{% endif %}
 
 
 {% if has_site or site_down %}Le point le plus urgent : {{ hook }}.{% else %}Un simple site vitrine suffit souvent à apparaître dans les recherches Google locales.{% endif %} C'est réglé en {{ recommended.delivery }} avec notre offre {{ recommended.short }} ({{ recommended.price }}).

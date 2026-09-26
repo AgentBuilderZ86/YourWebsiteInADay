@@ -4,7 +4,7 @@ Bonjour,
 
 Je ne veux pas vous importuner : ce sera mon dernier message.
 
-Si le sujet du site de {{ lead.name }} redevient d'actualité, il suffit de répondre à cet email — la maquette et l'audit restent disponibles.
+Si le sujet du site {{ de_name }} redevient d'actualité, il suffit de répondre à cet email — la maquette et l'audit restent disponibles.
 
 Belle continuation,
 {% include "emails/fr/_signature.txt" %}

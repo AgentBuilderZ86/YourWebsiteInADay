@@ -9,7 +9,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
-from .audit import audit_url, best_emails, issue_dict
+from .audit import FREE_MAIL, audit_url, best_emails, issue_dict
 from .db import DB, now_iso
 from .discover import discover, import_csv, next_combos
 from .mailer import Mailer, fetch_replies
@@ -56,6 +56,14 @@ def step_import(db: DB, path: str) -> int:
     return ingest(db, import_csv(path), 10**9)
 
 
+def website_from_email(lead: dict[str, Any]) -> str | None:
+    """Commerce « sans site » mais email sur un domaine propre : ce domaine porte souvent un site."""
+    if lead.get("website") or not lead.get("email") or "@" not in lead["email"]:
+        return None
+    domain = lead["email"].split("@", 1)[1].lower()
+    return None if domain in FREE_MAIL else f"https://{domain}"
+
+
 def priority(cfg: dict[str, Any], lead: dict[str, Any], score: int) -> float:
     """Plus c'est haut, plus le lead est prometteur : site mauvais × valeur du métier × joignabilité."""
     cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {})
@@ -72,6 +80,11 @@ def step_audit(db: DB, cfg: dict[str, Any], auditor: Callable[..., Any] = audit_
     threshold = a.get("bad_site_threshold", 60)
     include_no_site = cfg["prospecting"].get("include_no_website", True)
     leads = db.leads("new")
+    for lead in leads:
+        guessed = website_from_email(lead)
+        if guessed:
+            lead["website"] = guessed
+            db.update_lead(lead["id"], website=guessed)
     kwargs = {"timeout": a.get("timeout_seconds", 15), "use_pagespeed": a.get("use_pagespeed", False)}
     with ThreadPoolExecutor(max_workers=workers) as pool:
         results = list(pool.map(lambda l: auditor(l.get("website"), **kwargs), leads))
@@ -137,7 +150,7 @@ def _initial_subject(db: DB, lead_id: int) -> str:
 def preview_url(lead: dict[str, Any], cfg: dict[str, Any]) -> str | None:
     """URL de la capture de la maquette, seulement si elle a bien été générée (sinon email sans image)."""
     url = mockup_url(lead, cfg)
-    return f"{url}preview.png" if url and preview_path(lead, cfg).exists() else None
+    return f"{url}preview.jpg" if url and preview_path(lead, cfg).exists() else None
 
 
 def _dispatch(db: DB, cfg: dict[str, Any], mailer: Mailer, lead: dict[str, Any], kind: str,

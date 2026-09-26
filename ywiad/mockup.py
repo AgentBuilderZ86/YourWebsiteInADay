@@ -150,13 +150,13 @@ def write_landing(cfg: dict[str, Any]) -> str:
 
 
 def render_previews(html_paths: list[str]) -> int:
-    """Capture (preview.png, format mobile) de chaque maquette qui n'en a pas encore.
+    """Capture (preview.jpg, format mobile) de chaque maquette qui n'en a pas encore.
 
     Utilise Playwright côté Node (préinstallé dans l'environnement cloud). Sans Node/Playwright,
     les emails partent simplement sans image.
     """
-    jobs = [[str(Path(h).resolve()), str(Path(h).resolve().with_name("preview.png"))]
-            for h in html_paths if not Path(h).with_name("preview.png").exists()]
+    jobs = [[str(Path(h).resolve()), str(Path(h).resolve().with_name("preview.jpg"))]
+            for h in html_paths if not Path(h).with_name("preview.jpg").exists()]
     if not jobs or not shutil.which("node"):
         return 0
     env = dict(os.environ)
@@ -174,4 +174,4 @@ def render_previews(html_paths: list[str]) -> int:
 
 
 def preview_path(lead: dict[str, Any], cfg: dict[str, Any]) -> Path:
-    return Path(cfg["paths"]["mockups"]) / mockup_slug(lead) / "preview.png"
+    return Path(cfg["paths"]["mockups"]) / mockup_slug(lead) / "preview.jpg"

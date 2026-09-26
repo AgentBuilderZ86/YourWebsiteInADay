@@ -297,10 +297,12 @@ def test_html_email_initial(cfg):
             "issues": [{"code": "bad_ssl", "penalty": 20, "params": {}}, {"code": "not_mobile", "penalty": 20, "params": {}},
                        {"code": "no_cta", "penalty": 5, "params": {}}]}
     html = render_email_html("initial", lead, cfg, mockup_url="https://x/demo/shine-spa-32/",
-                             preview_url="https://x/demo/shine-spa-32/preview.png")
+                             preview_url="https://x/demo/shine-spa-32/preview.jpg")
     assert html.startswith("<!doctype html>")
     assert ">49</span>" in html and "À refaire" in html and "shinespa.fr" in html
-    assert 'src="https://x/demo/shine-spa-32/preview.png"' in html
+    assert 'src="https://x/demo/shine-spa-32/preview.jpg"' in html
+    assert 'height="343"' in html and 'bgcolor="#1a1614"' in html
+    assert '<a href="https://x/demo/shine-spa-32/" style="display:inline-block;">' not in html
     assert "Conseillé pour vous" in html and "1 290 €" in html and "L34-5" in html
     assert len(html.encode()) < 60_000  # Gmail tronque au-delà de ~102 Ko
 
@@ -313,3 +315,12 @@ def test_html_email_followup_keeps_text_and_links(cfg):
     html = render_email_html("followup_1", lead, cfg, mockup_url="https://x/demo/cafe-1/")
     assert "Café &amp; Co" in html and '<a href="https://x/demo/cafe-1/"' in html
     assert "Votre maquette" in html and "<script" not in html
+
+
+def test_french_elision_and_custom_domain_site():
+    from ywiad.outreach import de_name
+    assert de_name("Institut Audrey Ebeyer") == "d'Institut Audrey Ebeyer"
+    assert de_name("Hotel Espagne21") == "d'Hotel Espagne21"
+    assert de_name("Shine Spa") == "de Shine Spa"
+    assert pipeline.website_from_email({"website": None, "email": "contact@laurabinstitut.fr"}) == "https://laurabinstitut.fr"
+    assert pipeline.website_from_email({"website": None, "email": "salon@gmail.com"}) is None
