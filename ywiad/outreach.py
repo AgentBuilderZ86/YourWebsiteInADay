@@ -34,7 +34,8 @@ STRINGS = {
         "intro_none": "En cherchant un {cat} à {city}, j'ai trouvé {name}, mais aucun site web. Aujourd'hui, la plupart des clients vérifient horaires, adresse et avis en ligne avant de se déplacer — sans site, ils choisissent souvent un concurrent.",
         "audit_label": "Audit express",
         "verdicts": ("Critique", "À refaire", "À moderniser"),
-        "problem": {"no_site": "Aucun site web trouvé", "expired": "Votre site a disparu d'internet", "down": "Votre site ne s'affiche plus"},
+        "problem": {"no_site": "Aucun site web trouvé", "expired": "Votre site a disparu d'internet",
+                    "parked": "Votre site a disparu d'internet", "down": "Votre site ne s'affiche plus"},
         "mockup_kicker": "Votre maquette",
         "mockup_title": "Votre nouveau site est déjà prêt",
         "mockup_text": "J'ai conçu gratuitement une première version du site {de_name} : pensée pour le mobile, rapide, avec prise de contact et itinéraire en un geste. Elle est en ligne, prête à être personnalisée.",
@@ -57,7 +58,8 @@ STRINGS = {
         "intro_none": "While looking for a {cat} in {city}, I found {name} but no website. Most customers now check opening hours, location and reviews online before visiting — without a site, many pick a competitor.",
         "audit_label": "Quick audit",
         "verdicts": ("Critical", "Needs a rebuild", "Needs updating"),
-        "problem": {"no_site": "No website found", "expired": "Your website has vanished", "down": "Your website no longer loads"},
+        "problem": {"no_site": "No website found", "expired": "Your website has vanished",
+                    "parked": "Your website has vanished", "down": "Your website no longer loads"},
         "mockup_kicker": "Your mock-up",
         "mockup_title": "Your new website is already built",
         "mockup_text": "I designed a free first version of {name}'s website: mobile-first, fast, with one-tap contact and directions. It's live and ready to be tailored to you.",
@@ -78,6 +80,7 @@ STRINGS = {
 HOOKS = {
     "fr": {
         "expired": "votre site a disparu d'internet",
+        "parked": "votre site a disparu d'internet",
         "down": "votre site est inaccessible",
         "empty": "votre site semble vide",
         "no_https": "votre site affiche « Non sécurisé »",
@@ -91,6 +94,7 @@ HOOKS = {
     },
     "en": {
         "expired": "your website has disappeared from the internet",
+        "parked": "your website has disappeared from the internet",
         "down": "your website is down",
         "empty": "your website looks empty",
         "no_https": "your website shows \"Not secure\"",
@@ -118,7 +122,7 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
     recommended = next((t for t in tiers if t["recommended"]), tiers[1])
     issues = [{**i, "label": issue_label(i["code"], i.get("params", {}), lang)} for i in lead.get("issues") or []]
     codes = [i["code"] for i in issues]
-    site_down = bool(lead.get("website")) and ("down" in codes or "expired" in codes)
+    site_down = bool(lead.get("website")) and bool({"down", "expired", "parked"} & set(codes))
     has_site = bool(lead.get("website")) and not site_down and "no_site" not in codes
     hooks = HOOKS[lang]
     cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {})
@@ -172,14 +176,13 @@ def harden_backgrounds(html: str) -> str:
 
 
 def _phone(lead: dict[str, Any], cfg: dict[str, Any], lang: str, category_label: str) -> dict[str, str]:
-    from .mockup import DEFAULT_THEME, STRINGS as MOCKUP_STRINGS, THEMES
-    theme = THEMES.get(lead.get("category") or "", DEFAULT_THEME)
-    tagline, cta = theme[lang]
+    """Mêmes choix que la maquette web (accroche, couleur) : l'aperçu de l'email et le site concordent."""
+    from .mockup import STRINGS as MOCKUP_STRINGS, mockup_spec
+    spec = mockup_spec(lead, cfg)
     t = MOCKUP_STRINGS[lang]
-    city = lead.get("city") or ""
-    return {"accent": theme["accent"], "bg": theme["bg"], "tagline": tagline, "cta": cta,
-            "eyebrow": " · ".join(p for p in (category_label, city) if p), "intro": t["intro"],
-            "chip": t["chip_booking"]}
+    return {"accent": spec["accent"], "bg": spec["bg"], "tagline": spec["tagline"], "cta": spec["cta"],
+            "eyebrow": spec["eyebrow"], "intro": (spec["lede"][:90] + "…") if len(spec["lede"]) > 90 else (spec["lede"] or t["intro"]),
+            "chip": " · ".join(spec["facts"][:1]) or t["chip_booking"]}
 
 
 def _linkify(text: str) -> Markup:

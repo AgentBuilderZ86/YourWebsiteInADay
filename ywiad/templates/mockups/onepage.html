@@ -4,43 +4,69 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ lead.name }}{% if lead.city %} — {{ lead.city }}{% endif %}</title>
-<meta name="description" content="{{ lead.name }} : {{ tagline }}.{% if lead.address %} {{ lead.address }}.{% endif %}">
+<meta name="description" content="{{ lead.name }} : {{ spec.tagline }}.{% if lead.address %} {{ lead.address }}.{% endif %}">
 <meta property="og:title" content="{{ lead.name }}">
-<meta property="og:description" content="{{ tagline }}">
+<meta property="og:description" content="{{ spec.tagline }}">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+{% set tel = lead.phone.split(';')[0] | replace(' ', '') if lead.phone else '' %}
+{% set primary_href = 'https://wa.me/' ~ whatsapp if whatsapp else ('tel:' ~ tel if tel else ('mailto:' ~ lead.email if lead.email else '#contact')) %}
+{% set maps_href = 'https://www.google.com/maps/search/?api=1&query=' ~ ((lead.name ~ ' ' ~ (lead.address or lead.city or '')) | urlencode) %}
 <style>
-  :root { --accent: {{ theme.accent }}; --bg: {{ theme.bg }}; --ink: #1a1614; --muted: #5f5751; --card: #ffffff; --line: rgba(26,22,20,.08); }
+  :root { --accent: {{ spec.accent }}; --bg: {{ spec.bg }}; --ink: #1a1614; --muted: #5f5751; --card: #ffffff; --line: rgba(26,22,20,.09); }
   * { box-sizing: border-box; }
   html { -webkit-text-size-adjust: 100%; }
   body { margin: 0; font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink); background: var(--bg); line-height: 1.6; }
   a { color: inherit; }
-  .banner { background: var(--ink); color: #fff; text-align: center; font-size: .8rem; padding: .55rem 1rem; letter-spacing: .01em; }
+  img { max-width: 100%; display: block; }
+  .banner { background: var(--ink); color: #fff; text-align: center; font-size: .8rem; padding: .55rem 1rem; }
   .banner a { color: #fff; text-decoration: underline; text-underline-offset: 3px; }
   .wrap { max-width: 1120px; margin: 0 auto; padding: 0 20px; }
-  header { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px 0; }
-  .brand { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 1.3rem; letter-spacing: -.01em; }
+  header.top { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px 0; }
+  .brand { font-family: Fraunces, Georgia, serif; font-weight: 600; font-size: 1.3rem; letter-spacing: -.01em; display: flex; align-items: center; text-decoration: none; }
+  .brand img { height: 40px; width: auto; }
   .brand span { color: var(--accent); }
-  .pill { display: inline-flex; align-items: center; gap: .4rem; font-size: .85rem; font-weight: 600; text-decoration: none; padding: .55rem 1rem; border-radius: 999px; border: 1px solid var(--line); background: var(--card); }
-  .hero { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; padding: 40px 0 72px; }
+  .pill { display: inline-flex; align-items: center; gap: .4rem; font-size: .85rem; font-weight: 600; text-decoration: none; padding: .55rem 1rem; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
   .eyebrow { font-size: .75rem; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 16px; }
-  h1 { font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: clamp(2.4rem, 6vw, 4.2rem); line-height: 1.02; letter-spacing: -.035em; margin: 0 0 20px; }
-  .lede { font-size: 1.1rem; color: var(--muted); max-width: 30em; margin: 0 0 28px; }
+  h1 { font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: clamp(2.3rem, 6vw, 4.2rem); line-height: 1.03; letter-spacing: -.035em; margin: 0 0 20px; }
+  .lede { font-size: 1.1rem; color: var(--muted); max-width: 32em; margin: 0 0 28px; }
   .actions { display: flex; flex-wrap: wrap; gap: 10px; }
-  .btn { display: inline-flex; align-items: center; gap: .5rem; background: var(--accent); color: #fff; padding: .85rem 1.4rem; border-radius: 999px; text-decoration: none; font-weight: 600; font-size: .95rem; box-shadow: 0 10px 24px -12px var(--accent); }
-  .btn.ghost { background: transparent; color: var(--ink); box-shadow: none; border: 1px solid var(--line); background: var(--card); }
-  .visual { position: relative; aspect-ratio: 4/5; border-radius: 28px; overflow: hidden;
-    background:
-      radial-gradient(60% 50% at 20% 15%, color-mix(in srgb, var(--accent) 55%, #fff) 0%, transparent 70%),
-      radial-gradient(50% 45% at 85% 80%, color-mix(in srgb, var(--accent) 80%, #000) 0%, transparent 70%),
-      linear-gradient(160deg, color-mix(in srgb, var(--accent) 85%, #fff) 0%, var(--accent) 100%); }
-  .visual::after { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.18) 1px, transparent 1px); background-size: 18px 18px; }
-  .visual .mark { position: absolute; left: 28px; bottom: 26px; right: 28px; color: #fff; font-family: Fraunces, Georgia, serif; font-size: clamp(1.6rem, 4vw, 2.3rem); line-height: 1.05; letter-spacing: -.02em; z-index: 1; }
-  .chip { position: absolute; z-index: 1; display: inline-flex; align-items: center; gap: .45rem; background: rgba(255,255,255,.92); color: var(--ink); font-size: .8rem; font-weight: 600; padding: .5rem .8rem; border-radius: 999px; box-shadow: 0 8px 20px -10px rgba(0,0,0,.35); }
+  .btn { display: inline-flex; align-items: center; gap: .5rem; background: var(--accent); color: #fff; padding: .85rem 1.4rem; border-radius: 999px; text-decoration: none; font-weight: 600; font-size: .95rem; }
+  .btn.ghost { background: var(--card); color: var(--ink); border: 1px solid var(--line); }
+  .facts { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 22px; padding: 0; list-style: none; }
+  .facts li { font-size: .82rem; font-weight: 600; padding: .35rem .75rem; border-radius: 999px; background: color-mix(in srgb, var(--accent) 12%, #fff); color: color-mix(in srgb, var(--accent) 80%, #000); }
+  .visual { position: relative; border-radius: 28px; overflow: hidden; min-height: 320px;
+    background: radial-gradient(60% 50% at 20% 15%, color-mix(in srgb, var(--accent) 55%, #fff) 0%, transparent 70%),
+                radial-gradient(50% 45% at 85% 80%, color-mix(in srgb, var(--accent) 80%, #000) 0%, transparent 70%),
+                linear-gradient(160deg, color-mix(in srgb, var(--accent) 85%, #fff) 0%, var(--accent) 100%); }
+  .visual::after { content: ""; position: absolute; inset: 0; background-image: radial-gradient(rgba(255,255,255,.16) 1px, transparent 1px); background-size: 18px 18px; }
+  .visual .mark { position: absolute; left: 28px; bottom: 24px; right: 28px; color: #fff; font-family: Fraunces, Georgia, serif; font-size: clamp(1.6rem, 4vw, 2.4rem); line-height: 1.05; z-index: 1; }
+  .chip { position: absolute; z-index: 1; top: 22px; left: 22px; display: inline-flex; align-items: center; gap: .45rem; background: rgba(255,255,255,.93); color: var(--ink); font-size: .8rem; font-weight: 600; padding: .5rem .8rem; border-radius: 999px; }
   .chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); display: inline-block; }
-  .c1 { top: 22px; left: 22px; } .c2 { top: 70px; right: 22px; }
+
+  /* Mises en page du héros */
+  .hero-split { display: grid; grid-template-columns: 1.1fr .9fr; gap: 48px; align-items: center; padding: 40px 0 72px; }
+  .hero-split .visual { aspect-ratio: 4/5; }
+  .hero-center { text-align: center; padding: 56px 0 40px; }
+  .hero-center .lede { margin-left: auto; margin-right: auto; }
+  .hero-center .actions, .hero-center .facts { justify-content: center; }
+  .band { height: 240px; margin: 8px 0 72px; }
+  .hero-editorial { display: grid; grid-template-columns: 1.4fr .6fr; gap: 48px; padding: 48px 0 64px; border-bottom: 1px solid var(--line); }
+  .hero-editorial .display { font-family: Fraunces, Georgia, serif; font-size: clamp(3rem, 9vw, 6.5rem); line-height: .95; letter-spacing: -.045em; margin: 0 0 24px; }
+  .hero-editorial .rule { width: 72px; height: 4px; background: var(--accent); margin: 0 0 20px; border-radius: 2px; }
+  .aside { border-left: 1px solid var(--line); padding-left: 28px; font-size: .95rem; color: var(--muted); }
+  .aside b { display: block; color: var(--ink); margin-top: 14px; }
+  .hero-photo { position: relative; min-height: 78vh; display: flex; align-items: flex-end; color: #fff; background-size: cover; background-position: center; }
+  .hero-photo::before { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(0,0,0,.15) 0%, rgba(0,0,0,.65) 100%); }
+  .hero-photo .inner { position: relative; padding: 0 20px 64px; max-width: 1120px; margin: 0 auto; width: 100%; }
+  .hero-photo .eyebrow { color: #fff; opacity: .9; }
+  .hero-photo .lede { color: rgba(255,255,255,.88); }
+  .hero-photo .btn.ghost { background: rgba(255,255,255,.14); color: #fff; border-color: rgba(255,255,255,.4); }
+  .hero-photo header.top { position: absolute; top: 0; left: 0; right: 0; padding: 20px; max-width: 1120px; margin: 0 auto; }
+  .hero-photo .brand { color: #fff; }
+
   section.block { padding: 64px 0; border-top: 1px solid var(--line); }
   h2 { font-family: Fraunces, Georgia, serif; font-weight: 500; font-size: clamp(1.7rem, 3.5vw, 2.4rem); letter-spacing: -.02em; margin: 0 0 28px; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 16px; }
@@ -48,48 +74,116 @@
   .card .n { font-family: Fraunces, Georgia, serif; color: var(--accent); font-size: 1.1rem; }
   .card h3 { margin: 6px 0 6px; font-size: 1.05rem; }
   .card p { margin: 0; color: var(--muted); font-size: .95rem; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; }
+  .gallery img { width: 100%; aspect-ratio: 4/3; object-fit: cover; border-radius: 16px; }
+  .contact { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
   footer { padding: 36px 0 96px; color: var(--muted); font-size: .85rem; border-top: 1px solid var(--line); }
-  .wa { position: fixed; right: 16px; bottom: 16px; display: inline-flex; align-items: center; gap: .5rem; background: #1f9d55; color: #fff; border-radius: 999px; padding: .8rem 1.1rem; font-weight: 600; font-size: .9rem; text-decoration: none; box-shadow: 0 12px 30px -10px rgba(0,0,0,.45); }
+  .wa { position: fixed; right: 16px; bottom: 16px; background: #1f9d55; color: #fff; border-radius: 999px; padding: .8rem 1.1rem; font-weight: 600; font-size: .9rem; text-decoration: none; box-shadow: 0 12px 30px -10px rgba(0,0,0,.45); }
   @media (max-width: 820px) {
-    .hero { grid-template-columns: 1fr; gap: 28px; padding: 20px 0 48px; }
-    .visual { aspect-ratio: 16/11; }
+    .hero-split, .hero-editorial { grid-template-columns: 1fr; gap: 28px; padding: 20px 0 48px; }
+    .hero-split .visual { aspect-ratio: 16/11; }
+    .aside { border-left: 0; padding-left: 0; border-top: 1px solid var(--line); padding-top: 12px; }
+    .hero-photo { min-height: 70vh; }
   }
 </style>
 </head>
 <body>
-<div class="banner">{{ t.banner.format(biz=business.name, name=lead.name) }} — <a href="{{ business.website }}">{{ t.more }}</a></div>
-<div class="wrap">
-  <header>
-    <div class="brand">{{ lead.name }}<span>.</span></div>
-    {% if lead.phone %}<a class="pill" href="tel:{{ lead.phone.split(';')[0] | replace(' ', '') }}">{{ t.call }}</a>{% endif %}
-  </header>
+<div class="banner">{{ (t.banner_redesign if spec.redesign else t.banner).format(biz=business.name, name=lead.name) }} — <a href="{{ business.website }}">{{ t.more }}</a></div>
 
-  <div class="hero">
+{% macro brand(light=False) %}
+<a class="brand" href="#">{% if logo %}<img src="{{ logo }}" alt="{{ lead.name }}">{% else %}{{ lead.name }}<span>.</span>{% endif %}</a>
+{% endmacro %}
+{% macro buttons() %}
+<div class="actions">
+  <a class="btn" href="{{ primary_href }}">{{ spec.cta }} →</a>
+  {% if lead.address or lead.city %}<a class="btn ghost" href="{{ maps_href }}">{{ t.directions }}</a>{% endif %}
+</div>
+{% endmacro %}
+{% macro facts() %}{% if spec.facts %}<ul class="facts">{% for f in spec.facts %}<li>{{ f }}</li>{% endfor %}</ul>{% endif %}{% endmacro %}
+
+{% if layout == "photo" %}
+<div class="hero-photo" style="background-image:url('{{ photos[0] }}');">
+  <header class="top">{{ brand() }}{% if tel %}<a class="pill" href="tel:{{ tel }}">{{ t.call }}</a>{% endif %}</header>
+  <div class="inner">
+    <p class="eyebrow">{{ spec.eyebrow }}</p>
+    <h1>{{ spec.tagline }}</h1>
+    <p class="lede">{{ spec.lede or t.intro }}</p>
+    {{ buttons() }}
+  </div>
+</div>
+<div class="wrap">
+{% else %}
+<div class="wrap">
+  <header class="top">{{ brand() }}{% if tel %}<a class="pill" href="tel:{{ tel }}">{{ t.call }}</a>{% endif %}</header>
+
+  {% if layout == "split" %}
+  <div class="hero-split">
     <div>
-      <p class="eyebrow">{{ category_label }}{% if lead.city %} · {{ lead.city }}{% endif %}</p>
-      <h1>{{ tagline }}</h1>
-      <p class="lede">{{ t.intro }}</p>
-      <div class="actions">
-        {% if whatsapp %}<a class="btn" href="https://wa.me/{{ whatsapp }}">{{ cta }} →</a>
-        {% elif lead.phone %}<a class="btn" href="tel:{{ lead.phone.split(';')[0] | replace(' ', '') }}">{{ cta }} →</a>
-        {% elif lead.email %}<a class="btn" href="mailto:{{ lead.email }}">{{ cta }} →</a>{% endif %}
-        {% if lead.address or lead.city %}<a class="btn ghost" href="https://www.google.com/maps/search/?api=1&query={{ (lead.name ~ ' ' ~ (lead.address or lead.city)) | urlencode }}">{{ t.directions }}</a>{% endif %}
-      </div>
+      <p class="eyebrow">{{ spec.eyebrow }}</p>
+      <h1>{{ spec.tagline }}</h1>
+      {{ facts() }}
+      <p class="lede">{{ spec.lede or t.intro }}</p>
+      {{ buttons() }}
     </div>
-    <div class="visual" aria-hidden="true">
-      <span class="chip c1"><i></i>{{ t.chip_booking }}</span>
-      <span class="chip c2"><i></i>{{ lead.city or t.chip_local }}</span>
-      <div class="mark">{{ lead.name }}</div>
+    <div class="visual" aria-hidden="true"><span class="chip"><i></i>{{ t.chip_booking }}</span><div class="mark">{{ lead.name }}</div></div>
+  </div>
+  {% elif layout == "center" %}
+  <div class="hero-center">
+    <p class="eyebrow">{{ spec.eyebrow }}</p>
+    <h1>{{ spec.tagline }}</h1>
+    {{ facts() }}
+    <p class="lede">{{ spec.lede or t.intro }}</p>
+    {{ buttons() }}
+  </div>
+  <div class="visual band" aria-hidden="true"><span class="chip"><i></i>{{ t.chip_booking }}</span><div class="mark">{{ lead.name }}</div></div>
+  {% else %}
+  <div class="hero-editorial">
+    <div>
+      <p class="eyebrow">{{ spec.eyebrow }}</p>
+      <div class="display">{{ lead.name }}</div>
+      <div class="rule"></div>
+      <h1 style="font-size:clamp(1.5rem,3vw,2.1rem)">{{ spec.tagline }}</h1>
+      <p class="lede">{{ spec.lede or t.intro }}</p>
+      {{ buttons() }}
+    </div>
+    <div class="aside">
+      {{ facts() }}
+      <b>{{ t.hours }}</b>{{ hours or t.hours_txt }}
+      <b>{{ t.find }}</b>{{ lead.address or lead.city or t.find_txt }}
+      {% if tel %}<b>{{ t.call_us }}</b><a href="tel:{{ tel }}">{{ lead.phone.split(';')[0] }}</a>{% endif %}
     </div>
   </div>
+  {% endif %}
+{% endif %}
 
   <section class="block">
     <h2>{{ t.why }}</h2>
     <div class="grid">
-      <div class="card"><div class="n">01</div><h3>{{ t.services }}</h3><p>{{ t.services_txt }}</p></div>
-      <div class="card"><div class="n">02</div><h3>{{ t.hours }}</h3><p>{{ hours or t.hours_txt }}</p></div>
-      <div class="card"><div class="n">03</div><h3>{{ t.find }}</h3><p>{{ lead.address or lead.city or t.find_txt }}</p></div>
-      <div class="card"><div class="n">04</div><h3>{{ t.reviews }}</h3><p>{{ t.reviews_txt }}</p></div>
+      {% if spec.sections %}
+        {% for s in spec.sections %}<div class="card"><div class="n">{{ '%02d' % loop.index }}</div><h3>{{ s.title }}</h3>{% if s.text %}<p>{{ s.text }}</p>{% endif %}</div>{% endfor %}
+      {% else %}
+        <div class="card"><div class="n">01</div><h3>{{ t.services }}</h3><p>{{ t.services_txt }}</p></div>
+        <div class="card"><div class="n">02</div><h3>{{ t.hours }}</h3><p>{{ hours or t.hours_txt }}</p></div>
+        <div class="card"><div class="n">03</div><h3>{{ t.find }}</h3><p>{{ lead.address or lead.city or t.find_txt }}</p></div>
+        <div class="card"><div class="n">04</div><h3>{{ t.reviews }}</h3><p>{{ t.reviews_txt }}</p></div>
+      {% endif %}
+    </div>
+  </section>
+
+  {% if photos | length > 1 %}
+  <section class="block">
+    <h2>{{ t.gallery }}</h2>
+    <div class="gallery">{% for p in photos[1:7] %}<img src="{{ p }}" alt="{{ lead.name }}" loading="lazy">{% endfor %}</div>
+  </section>
+  {% endif %}
+
+  <section class="block" id="contact">
+    <h2>{{ t.contact }}</h2>
+    <div class="contact">
+      <div class="card"><h3>{{ t.find }}</h3><p>{{ lead.address or lead.city or t.find_txt }}</p><p><a href="{{ maps_href }}">{{ t.directions }} →</a></p></div>
+      <div class="card"><h3>{{ t.hours }}</h3><p>{{ hours or t.hours_txt }}</p></div>
+      {% if tel %}<div class="card"><h3>{{ t.call_us }}</h3><p><a href="tel:{{ tel }}">{{ lead.phone.split(';')[0] }}</a></p></div>
+      {% elif lead.email %}<div class="card"><h3>{{ t.write }}</h3><p><a href="mailto:{{ lead.email }}">{{ lead.email }}</a></p></div>{% endif %}
     </div>
   </section>
 

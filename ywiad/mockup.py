@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import os
@@ -58,6 +59,8 @@ DEFAULT_THEME = {"accent": "#2563eb", "bg": "#f6f8fb", "icon": "⭐",
 STRINGS = {
     "fr": {
         "banner": "Maquette de démonstration réalisée par {biz} pour {name}", "more": "en savoir plus",
+        "banner_redesign": "Proposition de refonte réalisée par {biz} pour {name}, à partir des contenus de votre site actuel",
+        "gallery": "En images", "contact": "Nous rendre visite", "call_us": "Nous appeler", "write": "Nous écrire",
         "call": "Appeler", "directions": "Itinéraire", "intro": "Retrouvez nos services, nos horaires et contactez-nous en un clic.",
         "in": "à", "services": "Nos services", "services_txt": "Présentez ici vos prestations phares, vos prix et vos nouveautés.",
         "hours": "Horaires", "hours_txt": "Horaires à compléter", "find": "Nous trouver", "find_txt": "Adresse à compléter",
@@ -68,6 +71,8 @@ STRINGS = {
     },
     "en": {
         "banner": "Demo mock-up made by {biz} for {name}", "more": "learn more",
+        "banner_redesign": "Redesign proposal made by {biz} for {name}, built from your current website's content",
+        "gallery": "Gallery", "contact": "Visit us", "call_us": "Call us", "write": "Email us",
         "call": "Call", "directions": "Directions", "intro": "Discover our services and opening hours, and reach us in one tap.",
         "in": "in", "services": "Our services", "services_txt": "Showcase your key services, prices and latest news here.",
         "hours": "Opening hours", "hours_txt": "Opening hours to be added", "find": "Find us", "find_txt": "Address to be added",
@@ -106,15 +111,140 @@ def mockup_slug(lead: dict[str, Any]) -> str:
     return f"{slugify(lead['name'])}-{lead['id']}"
 
 
-def render_mockup(lead: dict[str, Any], cfg: dict[str, Any]) -> str:
+# Accroches par métier (plusieurs variantes, avec la ville quand on la connaît)
+TAGLINES: dict[str, dict[str, list[str]]] = {
+    "fr": {
+        "hotel": ["Votre séjour à {city}, pensé dans les moindres détails", "Une adresse de charme au cœur de {city}",
+                  "Le calme, la douceur et l'hospitalité, à {city}"],
+        "restaurant": ["La table qu'on recommande à {city}", "Une cuisine qui se partage, à {city}",
+                       "Des produits frais, une cuisine sincère"],
+        "cafe": ["Votre pause gourmande à {city}", "Café, douceurs et bonne humeur"],
+        "hairdresser": ["Votre style, notre passion, à {city}", "Coupe, couleur et conseils sur-mesure"],
+        "beauty": ["Prenez soin de vous, à {city}", "Soins, bien-être et beauté au naturel"],
+        "bakery": ["Fait maison, chaque matin, à {city}", "Le bon pain et les douceurs du quartier"],
+        "clothes": ["La nouvelle collection est arrivée", "Votre style, sélectionné avec soin à {city}"],
+        "florist": ["Des fleurs pour chaque moment", "Bouquets et compositions sur-mesure à {city}"],
+        "optician": ["Voir mieux, être bien, à {city}", "Lunettes, lentilles et conseils d'experts"],
+        "dentist": ["Des soins en toute confiance, à {city}", "Votre sourire entre de bonnes mains"],
+        "car_repair": ["Entretien et réparation, en toute transparence", "Votre garage de confiance à {city}"],
+        "estate_agent": ["Trouvez le bien qui vous ressemble à {city}", "Acheter, vendre, louer : on s'occupe de tout"],
+    },
+    "en": {
+        "hotel": ["Your stay in {city}, down to the last detail", "A charming address in the heart of {city}",
+                  "Calm, comfort and warm hospitality in {city}"],
+        "restaurant": ["The table locals recommend in {city}", "Food worth sharing, in {city}", "Fresh produce, honest cooking"],
+        "cafe": ["Your favourite coffee stop in {city}", "Coffee, treats and good vibes"],
+        "hairdresser": ["Your style, our passion, in {city}", "Cuts, colour and tailored advice"],
+        "beauty": ["Take time for yourself in {city}", "Treatments, wellbeing and natural beauty"],
+        "bakery": ["Baked fresh every morning in {city}", "Your neighbourhood bakery"],
+        "clothes": ["The new collection is here", "Curated style in {city}"],
+        "florist": ["Flowers for every moment", "Bespoke bouquets in {city}"],
+        "optician": ["See better, feel better, in {city}", "Glasses, lenses and expert advice"],
+        "dentist": ["Dental care you can trust in {city}", "Your smile in good hands"],
+        "car_repair": ["Honest servicing and repairs", "Your trusted garage in {city}"],
+        "estate_agent": ["Find the home that fits you in {city}", "Buy, sell, rent: we handle it all"],
+    },
+}
+# Palettes alternatives : deux commerces du même métier n'ont pas la même maquette
+ALT_ACCENTS = ["#1f4e5f", "#7a2e2e", "#2f5d50", "#4a3f8f", "#8a5a2b", "#23395d"]
+LAYOUTS = ("split", "center", "editorial")
+
+
+def _hash(value: str) -> int:
+    return int(hashlib.md5(value.encode()).hexdigest(), 16)
+
+
+def _usable_accent(color: str) -> bool:
+    if not re.fullmatch(r"#[0-9a-fA-F]{6}", color or ""):
+        return False
+    r, g, b = (int(color[i:i + 2], 16) / 255 for i in (1, 3, 5))
+    lum = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    return 0.08 < lum < 0.6  # ni quasi noir, ni trop clair pour du texte blanc
+
+
+def mockup_spec(lead: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any]:
+    """Tout ce qui rend une maquette propre à CE commerce (partagé par la maquette web et l'email)."""
     m = market(cfg, lead.get("market"))
     lang = m.get("language", "fr")
-    theme = THEMES.get(lead.get("category") or "", DEFAULT_THEME)
-    tagline, cta = theme[lang]
+    cat = lead.get("category") or ""
+    theme = THEMES.get(cat, DEFAULT_THEME)
+    h = _hash(lead["name"])
+    extra = lead.get("extra") or {}
+    site = extra.get("site") or {}
+    city = (lead.get("city") or "").strip()
+
+    options = TAGLINES[lang].get(cat) or [theme[lang][0]]
+    if not city:
+        options = [o for o in options if "{city}" not in o] or [theme[lang][0]]
+    # Choix indépendants (tranches différentes de l'empreinte) : accroche, couleur et mise en page varient séparément
+    tagline = site.get("headline") or options[(h >> 8) % len(options)].format(city=city)
+
+    accent = site.get("theme_color") if _usable_accent(site.get("theme_color", "")) else None
+    accent = accent or ([theme["accent"]] + ALT_ACCENTS)[(h >> 24) % (len(ALT_ACCENTS) + 1)]
+
+    facts = []
+    stars = str(extra.get("stars") or "").split(".")[0]
+    if stars.isdigit() and 0 < int(stars) <= 5:
+        facts.append("★" * int(stars))
+    if extra.get("cuisine"):
+        facts.append(extra["cuisine"].replace(";", " · ").replace("_", " ").title())
+    if city:
+        facts.append(city)
+
+    cat_label = cfg["prospecting"]["categories"].get(cat, {}).get(lang, "")
+    return {
+        "lang": lang,
+        "accent": accent,
+        "bg": theme["bg"],
+        "icon": theme["icon"],
+        "cta": theme[lang][1],
+        "tagline": tagline,
+        "lede": site.get("description") or "",
+        "sections": site.get("sections") or [],
+        "photos": site.get("photos") or [],
+        "logo": site.get("logo") or "",
+        "facts": facts,
+        "eyebrow": " · ".join(p for p in (cat_label, city) if p),
+        "layout": LAYOUTS[(h >> 40) % len(LAYOUTS)],
+        "redesign": bool(site),
+    }
+
+
+def download_assets(spec: dict[str, Any], out: Path, limit: int = 6) -> tuple[list[str], str]:
+    """Rapatrie les photos et le logo du site actuel (hébergés avec la maquette). Retourne (photos, logo) locaux."""
+    from .audit import HEADERS
+    import requests
+
+    img_dir = out / "img"
+    img_dir.mkdir(exist_ok=True)
+
+    def fetch(url: str, name: str, min_bytes: int) -> str | None:
+        for existing in img_dir.glob(name + ".*"):
+            return f"img/{existing.name}"
+        try:
+            r = requests.get(url, headers=HEADERS, timeout=15)
+        except requests.RequestException:
+            return None
+        ctype = r.headers.get("content-type", "")
+        ext = {"image/jpeg": "jpg", "image/png": "png", "image/webp": "webp"}.get(ctype.split(";")[0].strip())
+        if r.status_code != 200 or not ext or not (min_bytes <= len(r.content) <= 4_000_000):
+            return None
+        (img_dir / f"{name}.{ext}").write_bytes(r.content)
+        return f"img/{name}.{ext}"
+
+    photos = [p for i, url in enumerate(spec["photos"]) if (p := fetch(url, str(i), 12_000))][:limit]
+    logo = fetch(spec["logo"], "logo", 500) if spec["logo"] else None
+    return photos, logo or ""
+
+
+def render_mockup(lead: dict[str, Any], cfg: dict[str, Any], photos: list[str] | None = None, logo: str = "") -> str:
+    spec = mockup_spec(lead, cfg)
+    lang = spec["lang"]
+    m = market(cfg, lead.get("market"))
+    layout = "photo" if photos else spec["layout"]
     return _env.get_template("mockups/onepage.html").render(
-        lead=lead, theme=theme, tagline=tagline, cta=cta, lang=lang, t=STRINGS[lang],
-        category_label=cfg["prospecting"]["categories"].get(lead.get("category") or "", {}).get(lang, ""),
-        hours=lead.get("extra", {}).get("opening_hours"),
+        lead=lead, spec=spec, layout=layout, photos=photos or [], logo=logo, lang=lang, t=STRINGS[lang],
+        hours=(lead.get("extra") or {}).get("opening_hours"),
         whatsapp=whatsapp_number(lead.get("phone"), m.get("country_code")),
         business=cfg["business"],
     )
@@ -125,7 +255,9 @@ def write_mockup(lead: dict[str, Any], cfg: dict[str, Any]) -> tuple[str, str | 
     slug = mockup_slug(lead)
     out = Path(cfg["paths"]["mockups"]) / slug
     out.mkdir(parents=True, exist_ok=True)
-    (out / "index.html").write_text(render_mockup(lead, cfg), encoding="utf-8")
+    spec = mockup_spec(lead, cfg)
+    photos, logo = download_assets(spec, out) if (spec["photos"] or spec["logo"]) else ([], "")
+    (out / "index.html").write_text(render_mockup(lead, cfg, photos, logo), encoding="utf-8")
     base = (cfg["business"].get("mockup_base_url") or "").rstrip("/")
     return str(out / "index.html"), (f"{base}/{slug}/" if base else None)
 

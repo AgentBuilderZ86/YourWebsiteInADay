@@ -107,13 +107,41 @@ def step_audit(db: DB, cfg: dict[str, Any], auditor: Callable[..., Any] = audit_
             issues=[issue_dict(i) for i in result.issues],
             email=email,
             priority=priority(cfg, lead, result.score),
-            extra={**lead.get("extra", {}), **({"audit_note": result.note} if result.note else {})},
+            extra=_extra_with_content(lead, result),
             recommended_tier=recommend_tier(cfg, lead.get("category"), result.score, result.reachable),
             status=status,
         )
         stats[status] += 1
         log.info("audit %s → %s/100 (%s)%s", lead["name"], result.score, status, f" [{result.note}]" if result.note else "")
     return stats
+
+
+def _extra_with_content(lead: dict[str, Any], result: Any) -> dict[str, Any]:
+    """Conserve le contenu réel du site (textes, photos, logo) pour une maquette de refonte personnalisée."""
+    extra = {k: v for k, v in (lead.get("extra") or {}).items() if k not in ("site", "audit_note")}
+    if result.note:
+        extra["audit_note"] = result.note
+    content = getattr(result, "content", None) or {}
+    if result.verified and result.reachable and (content.get("headline") or content.get("photos") or content.get("sections")):
+        extra["site"] = content
+    return extra
+
+
+def reaudit(db: DB, cfg: dict[str, Any], statuses: tuple[str, ...] = ("qualified", "contacted"),
+            auditor: Callable[..., Any] = audit_url) -> list[tuple[str, int | None, int]]:
+    """Ré-audite des leads actifs (site revendu, réparé…). Retourne [(nom, ancien score, nouveau score)]."""
+    changes = []
+    for lead in db.leads(statuses):
+        if not lead.get("website"):
+            continue
+        result = auditor(lead["website"], timeout=cfg["audit"].get("timeout_seconds", 15))
+        if not result.verified:
+            continue
+        db.update_lead(lead["id"], score=result.score, issues=[issue_dict(i) for i in result.issues],
+                       extra=_extra_with_content(lead, result),
+                       recommended_tier=recommend_tier(cfg, lead.get("category"), result.score, result.reachable))
+        changes.append((lead["name"], lead.get("score"), result.score))
+    return changes
 
 
 def step_mockups(db: DB, cfg: dict[str, Any]) -> int:

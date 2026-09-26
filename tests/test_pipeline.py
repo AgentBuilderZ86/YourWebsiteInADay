@@ -301,7 +301,9 @@ def test_html_email_initial(cfg):
     assert html.startswith("<!doctype html>")
     assert ">49</span>" in html and "À refaire" in html and "shinespa.fr" in html
     assert "<img" not in html  # maquette dessinée en HTML : rien à bloquer
-    assert "Prenez soin de vous" in html and "INSTITUT" not in html  # accroche du métier ; majuscules via CSS
+    from ywiad.mockup import mockup_spec
+    assert mockup_spec(lead, cfg)["tagline"] in html  # même accroche que la maquette web
+    assert "INSTITUT" not in html  # majuscules via CSS
     assert "background:" not in html and 'bgcolor="#1a1614"' in html
     assert "Conseillé pour vous" in html and "1 290 €" in html and "L34-5" in html
     assert len(html.encode()) < 60_000  # Gmail tronque au-delà de ~102 Ko
@@ -324,3 +326,35 @@ def test_french_elision_and_custom_domain_site():
     assert de_name("Shine Spa") == "de Shine Spa"
     assert pipeline.website_from_email({"website": None, "email": "contact@laurabinstitut.fr"}) == "https://laurabinstitut.fr"
     assert pipeline.website_from_email({"website": None, "email": "salon@gmail.com"}) is None
+
+
+def test_gone_and_challenge_pages():
+    parked = "<html><head><title>shinespa.fr</title></head><body><h1>Too bad!</h1><p>This domain was successfully registered for the highest bidder in our weekly auction.</p></body></html>"
+    r = analyze_html(parked, final_url="https://www.shinespa.fr", load_seconds=1, page_bytes=900, https_ok=True, ssl_valid=True)
+    assert [i.code for i in r.issues] == ["parked"] and r.score == 0 and not r.reachable
+    deleted = "<html><title>La Maison</title><body><h1>Le site de La Maison a été supprimé.</h1></body></html>"
+    assert analyze_html(deleted, final_url="https://maison.fr", load_seconds=1, page_bytes=500, https_ok=True, ssl_valid=True).issues[0].code == "parked"
+    captcha = '<html><head><meta http-equiv="refresh" content="0;/.well-known/sgcaptcha/?r=%2F"></head></html>'
+    assert not analyze_html(captcha, final_url="https://riad.com", load_seconds=1, page_bytes=169, https_ok=True, ssl_valid=True).verified
+
+
+def test_site_content_extraction():
+    from ywiad.content import extract_site_content
+    html = """<html><head><title>Riad Nour — Marrakech</title><meta name="description" content="Un riad paisible au cœur de la médina, avec patio et hammam traditionnel.">
+    <meta name="theme-color" content="#7a3b2e"></head><body><header><img src="/img/logo.png" alt="Riad Nour logo"></header>
+    <h1>Riad Nour, la douceur de la médina</h1><div style="background-image:url('/uploads/patio-1600x900.jpg')"></div>
+    <img data-src="/uploads/chambre.jpg" src="data:image/gif;base64,xx" alt="Chambre"><h2>Nos chambres</h2><p>Six chambres décorées à la main, toutes avec salle de bain privée et climatisation.</p>
+    <h2>Le hammam</h2><p>Un hammam traditionnel et des soins aux huiles d'argan pour se ressourcer après la visite.</p></body></html>"""
+    c = extract_site_content(html, "https://riadnour.ma/")
+    assert c["headline"] == "Riad Nour, la douceur de la médina"
+    assert c["logo"] == "https://riadnour.ma/img/logo.png" and c["theme_color"] == "#7a3b2e"
+    assert "https://riadnour.ma/uploads/patio-1600x900.jpg" in c["photos"] and "https://riadnour.ma/uploads/chambre.jpg" in c["photos"]
+    assert [s["title"] for s in c["sections"]] == ["Nos chambres", "Le hammam"] and not c["parked"]
+
+
+def test_mockups_vary_between_businesses(cfg):
+    from ywiad.mockup import mockup_spec
+    base = {"category": "hotel", "market": "MA", "city": "Marrakech", "extra": {}}
+    specs = [mockup_spec({**base, "name": n}, cfg) for n in ("Riad A", "Riad Bahia", "Dar Chams", "Hotel Atlas", "Riad Zitoun")]
+    assert len({(s["layout"], s["accent"], s["tagline"]) for s in specs}) == len(specs)
+    assert any("Marrakech" in s["tagline"] for s in specs)

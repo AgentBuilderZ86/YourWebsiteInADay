@@ -44,6 +44,7 @@ def main(argv: list[str] | None = None) -> int:
     ib.add_argument("email")
     ib.add_argument("text")
     sub.add_parser("report", help="générer le rapport du jour")
+    sub.add_parser("reaudit", help="ré-auditer les leads actifs (qualifiés et contactés)")
     pr = sub.add_parser("pricing", help="afficher la grille tarifaire")
     pr.add_argument("--market", help="code marché (FR, US, MA…) ; défaut : tous")
     ls = sub.add_parser("leads", help="lister les leads (par priorité)")
@@ -103,6 +104,9 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Message #{args.msg_id} en échec : {args.reason}")
     elif args.cmd == "inbound":
         print(pipeline.inbound(db, args.email, args.text))
+    elif args.cmd == "reaudit":
+        for name, old, new in pipeline.reaudit(db, cfg):
+            print(f"{name[:32]:<32} {old} → {new}")
     elif args.cmd == "report":
         print(pipeline.write_report(db, cfg, {}))
     elif args.cmd == "pricing":

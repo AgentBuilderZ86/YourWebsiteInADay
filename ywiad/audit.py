@@ -14,6 +14,8 @@ from urllib.parse import urljoin, urlparse
 import requests
 import urllib3
 
+from .content import extract_site_content, is_challenge_page, is_parking_page
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # Navigateur réaliste : beaucoup de sites renvoient 403 aux robots déclarés
@@ -36,9 +38,8 @@ FREE_MAIL = {"gmail.com", "hotmail.com", "hotmail.fr", "outlook.com", "outlook.f
 # Sous-domaines gratuits : le commerçant n'a pas son propre nom de domaine
 FREE_HOSTS = ("wixsite.com", "business.site", "jimdosite.com", "jimdo.com", "webnode.", "e-monsite.com",
               "site123.me", "wordpress.com", "blogspot.com", "weebly.com", "godaddysites.com", "square.site")
-PARKED_MARKERS = (
-    "domain is for sale", "ce domaine est à vendre", "under construction", "en construction",
-    "coming soon", "site en maintenance", "parked domain", "buy this domain",
+PARKED_MARKERS = (  # site en chantier (le domaine appartient toujours au commerce)
+    "under construction", "en construction", "coming soon", "site en maintenance", "bientôt en ligne",
 )
 
 
@@ -59,6 +60,7 @@ ISSUE_LABELS: dict[str, dict[str, str]] = {
         "no_site": "Aucun site web : vos clients ne vous trouvent pas sur Google",
         "down": "Le site est inaccessible (erreur {status})",
         "expired": "Le nom de domaine {host} ne répond plus (probablement expiré) : votre site a disparu d'internet",
+        "parked": "L'adresse {host} affiche une page d'hébergeur ou de revente de nom de domaine : votre site n'y existe plus",
         "empty": "Le site est vide, en construction ou quasi sans contenu",
         "no_https": "Le site n'est pas sécurisé (pas de HTTPS) : Chrome affiche « Non sécurisé »",
         "bad_ssl": "Le certificat de sécurité est invalide : les visiteurs voient une alerte",
@@ -83,6 +85,7 @@ ISSUE_LABELS: dict[str, dict[str, str]] = {
         "no_site": "No website: customers can't find you on Google",
         "down": "The website is down (error {status})",
         "expired": "The domain {host} no longer resolves (probably expired): your website has vanished from the internet",
+        "parked": "{host} now shows a hosting or domain-resale page: your website no longer exists there",
         "empty": "The website is empty, under construction or has almost no content",
         "no_https": "The site isn't secure (no HTTPS): Chrome shows \"Not secure\"",
         "bad_ssl": "The security certificate is invalid: visitors get a warning",
@@ -122,6 +125,7 @@ class AuditResult:
     emails: list[str] = field(default_factory=list)
     load_seconds: float | None = None
     reachable: bool = True
+    content: dict[str, Any] = field(default_factory=dict)
     # False quand l'audit n'est pas fiable (anti-robot, site en JavaScript…) : on ne prospecte pas
     verified: bool = True
     note: str = ""
@@ -222,13 +226,20 @@ def analyze_html(html: str, *, final_url: str, load_seconds: float, page_bytes: 
         issues.append(Issue(code, penalty, params))
 
     visible = len(" ".join(p.text.split()))
+    host = urlparse(final_url).netloc.lower()
+    if is_challenge_page(html):
+        return AuditResult(final_url, 100, [], [], round(load_seconds, 2), verified=False,
+                           note="page anti-robot (captcha), audit non fiable")
+    if is_parking_page(p.title, " ".join(p.text.split()), host):
+        # Page d'hébergeur, de revente ou d'enchères : le site du commerce n'existe plus à cette adresse
+        return AuditResult(final_url, 0, [Issue("parked", 100, {"host": host.removeprefix("www.")})],
+                           [], round(load_seconds, 2), reachable=False)
     if any(m in text_lower for m in PARKED_MARKERS) or (visible < 200 and not p.scripts and not p.inline_scripts):
         add("empty", 30)
     elif visible < 200:
         # Contenu généré en JavaScript : notre lecture du HTML n'est pas représentative
         return AuditResult(final_url, 100, [], extract_emails(html), round(load_seconds, 2),
                            verified=False, note="site rendu en JavaScript, audit non fiable")
-    host = urlparse(final_url).netloc.lower()
     if any(h in host for h in FREE_HOSTS):
         add("no_domain", 15, host=host)
     if not https_ok:
@@ -269,7 +280,8 @@ def analyze_html(html: str, *, final_url: str, load_seconds: float, page_bytes: 
     emails = extract_emails(html)
     score = max(0, 100 - sum(i.penalty for i in issues))
     issues.sort(key=lambda i: -i.penalty)
-    return AuditResult(final_url, score, issues, emails, round(load_seconds, 2))
+    return AuditResult(final_url, score, issues, emails, round(load_seconds, 2),
+                       content=extract_site_content(html, final_url))
 
 
 CONTACT_HINTS = ("contact", "nous-contacter", "contactez", "about", "a-propos", "mentions-legales",
