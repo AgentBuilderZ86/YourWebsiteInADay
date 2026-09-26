@@ -19,7 +19,9 @@ STATUSES = (
     "lost",          # séquence de relances épuisée ou refus
     "unsubscribed",  # a demandé à ne plus être contacté
     "no_contact",    # qualifié mais aucun email trouvé (WhatsApp / téléphone)
+    "blocked",       # qualifié mais marché non envoyable (ex. adresse postale manquante)
 )
+MESSAGE_STATUSES = ("queued", "sent", "failed", "draft")
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS leads (
@@ -28,6 +30,7 @@ CREATE TABLE IF NOT EXISTS leads (
     source_id TEXT NOT NULL,
     name TEXT NOT NULL,
     category TEXT,
+    market TEXT,
     website TEXT,
     email TEXT,
     phone TEXT,
@@ -36,6 +39,7 @@ CREATE TABLE IF NOT EXISTS leads (
     extra TEXT DEFAULT '{}',
     status TEXT NOT NULL DEFAULT 'new',
     score INTEGER,
+    priority REAL,
     issues TEXT DEFAULT '[]',
     recommended_tier TEXT,
     mockup_path TEXT,
@@ -52,8 +56,16 @@ CREATE TABLE IF NOT EXISTS messages (
     channel TEXT NOT NULL,
     subject TEXT,
     body TEXT,
-    sent INTEGER NOT NULL DEFAULT 0,
-    created_at TEXT NOT NULL
+    status TEXT NOT NULL DEFAULT 'queued',
+    to_addr TEXT,
+    error TEXT,
+    thread_id TEXT,
+    created_at TEXT NOT NULL,
+    sent_at TEXT
+);
+CREATE TABLE IF NOT EXISTS state (
+    key TEXT PRIMARY KEY,
+    value TEXT
 );
 CREATE TABLE IF NOT EXISTS optouts (
     email TEXT PRIMARY KEY,
@@ -73,6 +85,10 @@ class DB:
         self.conn = sqlite3.connect(path)
         self.conn.row_factory = sqlite3.Row
         self.conn.executescript(SCHEMA)
+        # Migration douce des bases créées avant l'ajout de colonnes
+        cols = {r["name"] for r in self.conn.execute("PRAGMA table_info(messages)")}
+        if "thread_id" not in cols:
+            self.conn.execute("ALTER TABLE messages ADD COLUMN thread_id TEXT")
 
     # --- leads -----------------------------------------------------------
     def upsert_lead(self, lead: dict[str, Any]) -> tuple[int, bool]:
@@ -92,11 +108,11 @@ class DB:
                 return row["id"], False
         ts = now_iso()
         cur = self.conn.execute(
-            """INSERT INTO leads (source, source_id, name, category, website, email, phone,
+            """INSERT INTO leads (source, source_id, name, category, market, website, email, phone,
                                   address, city, extra, created_at, updated_at)
-               VALUES (?,?,?,?,?,?,?,?,?,?,?,?)""",
+               VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)""",
             (
-                lead["source"], lead["source_id"], lead["name"], lead.get("category"),
+                lead["source"], lead["source_id"], lead["name"], lead.get("category"), lead.get("market"),
                 lead.get("website"), lead.get("email"), lead.get("phone"),
                 lead.get("address"), lead.get("city"),
                 json.dumps(lead.get("extra", {}), ensure_ascii=False), ts, ts,
@@ -126,7 +142,7 @@ class DB:
             statuses = [status] if isinstance(status, str) else list(status)
             sql += f" WHERE status IN ({','.join('?' * len(statuses))})"
             params.extend(statuses)
-        sql += " ORDER BY id"
+        sql += " ORDER BY COALESCE(priority, 0) DESC, id"
         if limit:
             sql += " LIMIT ?"
             params.append(limit)
@@ -137,18 +153,64 @@ class DB:
             "SELECT status, COUNT(*) AS n FROM leads GROUP BY status")}
 
     # --- messages --------------------------------------------------------
-    def log_message(self, lead_id: int, kind: str, channel: str, subject: str, body: str, sent: bool) -> None:
+    def log_message(self, lead_id: int, kind: str, channel: str, subject: str, body: str,
+                    status: str, to_addr: str | None = None) -> int:
+        if status not in MESSAGE_STATUSES:
+            raise ValueError(f"Statut de message inconnu : {status}")
+        ts = now_iso()
+        cur = self.conn.execute(
+            """INSERT INTO messages (lead_id, kind, channel, subject, body, status, to_addr, created_at, sent_at)
+               VALUES (?,?,?,?,?,?,?,?,?)""",
+            (lead_id, kind, channel, subject, body, status, to_addr, ts, ts if status == "sent" else None),
+        )
+        self.conn.commit()
+        return cur.lastrowid
+
+    def message(self, msg_id: int) -> dict[str, Any] | None:
+        row = self.conn.execute("SELECT * FROM messages WHERE id=?", (msg_id,)).fetchone()
+        return dict(row) if row else None
+
+    def messages(self, status: str, channel: str = "email") -> list[dict[str, Any]]:
+        return [dict(r) for r in self.conn.execute(
+            "SELECT * FROM messages WHERE status=? AND channel=? ORDER BY id", (status, channel))]
+
+    def set_message_status(self, msg_id: int, status: str, error: str | None = None,
+                           thread_id: str | None = None) -> None:
         self.conn.execute(
-            "INSERT INTO messages (lead_id, kind, channel, subject, body, sent, created_at) VALUES (?,?,?,?,?,?,?)",
-            (lead_id, kind, channel, subject, body, int(sent), now_iso()),
+            "UPDATE messages SET status=?, error=?, sent_at=?, thread_id=COALESCE(?, thread_id) WHERE id=?",
+            (status, error, now_iso() if status == "sent" else None, thread_id, msg_id),
         )
         self.conn.commit()
 
-    def sent_today(self) -> int:
+    def lead_thread(self, lead_id: int) -> str | None:
+        """Fil Gmail du premier contact, pour y rattacher les relances."""
+        row = self.conn.execute(
+            "SELECT thread_id FROM messages WHERE lead_id=? AND status='sent' AND thread_id IS NOT NULL ORDER BY id LIMIT 1",
+            (lead_id,),
+        ).fetchone()
+        return row["thread_id"] if row else None
+
+    def has_pending(self, lead_id: int) -> bool:
+        return self.conn.execute(
+            "SELECT 1 FROM messages WHERE lead_id=? AND status='queued'", (lead_id,)
+        ).fetchone() is not None
+
+    def emails_today(self) -> int:
+        """Emails envoyés aujourd'hui + emails encore en file (ils partiront aujourd'hui)."""
         today = datetime.now(timezone.utc).date().isoformat()
         return self.conn.execute(
-            "SELECT COUNT(*) FROM messages WHERE channel='email' AND substr(created_at,1,10)=?", (today,)
+            """SELECT COUNT(*) FROM messages WHERE channel='email'
+               AND (status='queued' OR (status='sent' AND substr(sent_at,1,10)=?))""", (today,)
         ).fetchone()[0]
+
+    # --- état persistant (curseur de rotation, géocodage) -----------------
+    def get_state(self, key: str, default: Any = None) -> Any:
+        row = self.conn.execute("SELECT value FROM state WHERE key=?", (key,)).fetchone()
+        return json.loads(row["value"]) if row else default
+
+    def set_state(self, key: str, value: Any) -> None:
+        self.conn.execute("INSERT OR REPLACE INTO state VALUES (?,?)", (key, json.dumps(value)))
+        self.conn.commit()
 
     # --- opt-out ---------------------------------------------------------
     def add_optout(self, email: str) -> None:

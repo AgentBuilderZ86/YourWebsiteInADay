@@ -1,41 +1,116 @@
-# Routine pilotée par Claude
+# Routine autonome YourWebsiteInADay
 
-La commande `ywiad run` fait le travail mécanique (découverte, audit, maquettes, emails, relances).
-Cette routine ajoute ce que le script ne sait pas faire seul : **relire, personnaliser, répondre et closer**.
+Ce fichier est la procédure suivie par Claude à chaque exécution planifiée. Il fait foi : pour changer le
+comportement de la routine, on modifie ce fichier (pas le planning).
 
-Elle est prévue pour une routine Claude Code planifiée (tous les jours ouvrés), avec les connecteurs
-Gmail et Google Calendar activés.
+- Pilote : **AZ** (Adil Zriouil) — azriouil.az@gmail.com — WhatsApp +212 6 62 45 81 51
+- Code : dépôt `AgentBuilderZ86/YourWebsiteInADay`, branche par défaut
+- État (CRM) : branche `crm-data`, fichier **chiffré** `ywiad.sqlite.enc` (le dépôt est public)
+- Clé de chiffrement : variable `YWIAD_STATE_KEY` du site Netlify `yourwebsiteinaday`
+  (id `1b1f8625-7784-4333-b757-e44c5ccc8c36`)
+- Site public (offre + maquettes) : https://yourwebsiteinaday.netlify.app
+- Envoi : Gmail d'AZ, via le connecteur Gmail (aucun mot de passe stocké)
 
-## Prompt de la routine
+## Règles non négociables
 
-> Tu gères l'activité YourWebsiteInADay (refonte de sites de commerçants). Dans le dépôt
-> `YourWebsiteInADay` :
->
-> 1. Récupère l'état du CRM depuis la branche `crm-data` (dossiers `data/` et `out/`) et lance
->    `ywiad -v run`.
-> 2. **Relecture des brouillons** (`out/outbox/*.eml` du jour) : vérifie chaque email — nom du
->    commerce correct, problèmes cités plausibles, ton professionnel. Écarte (`ywiad mark <id> lost`)
->    les faux positifs évidents : chaînes/franchises, administrations, sites manifestement corrects.
->    Personnalise la première phrase avec un détail réel du commerce quand c'est possible.
-> 3. **Gmail** : crée un brouillon Gmail pour chaque email validé (ne les envoie pas tant que
->    `outreach.mode` vaut `draft` — c'est moi qui clique « Envoyer »).
-> 4. **Réponses** : cherche dans Gmail les réponses des prospects contactés.
->    - « STOP » / refus → `ywiad optout <email>`.
->    - Intérêt → `ywiad mark <id> replied`, prépare un brouillon de réponse avec le devis de l'offre
->      conseillée (grille : `ywiad pricing`) et propose deux créneaux libres de 15 min trouvés dans
->      mon agenda.
->    - Question → rédige une réponse en brouillon.
-> 5. Sauvegarde l'état sur `crm-data` et envoie-moi un résumé : nouveaux leads, emails prêts,
->    réponses reçues, liste WhatsApp (`out/reports/whatsapp_a_envoyer.csv`), valeur du pipeline.
+1. **Jamais** de base CRM en clair dans git. Seul `scripts/state.sh push` écrit sur `crm-data`.
+2. **Jamais** plus de `outreach.daily_send_limit` emails par jour (25), tous types confondus. Pause de
+   20 à 40 secondes entre deux envois. Au moindre signe de limitation Gmail (quota, « rate limit »,
+   blocage, 4xx/5xx répétés) : arrêter les envois, marquer les messages non envoyés avec `ywiad fail`,
+   et le signaler dans le résumé.
+3. **Jamais** de relance à quelqu'un qui a répondu, dit STOP, ou dont l'email a rebondi.
+4. **Jamais** de RIB, de lien de paiement ni d'engagement contractuel : toute intention d'achat est
+   transmise à AZ (email « [CLOSING] »). Claude répond aux questions, envoie le devis et propose un appel.
+5. Ne jamais inventer : dans les emails, ne citer que les problèmes relevés par l'audit.
+6. Pas d'envoi aux marchés sans base légale configurée (GB, DE, AT, CH), ni aux US/CA tant que
+   `business.postal_address` est vide (le code bloque ces leads : statut `blocked`).
 
-## Ce qui reste humain (volontairement)
+## Déroulé
 
-| Étape | Pourquoi |
+### 0. Préparation
+
+```bash
+# Si le dépôt n'est pas présent : outil add_repo (AgentBuilderZ86/YourWebsiteInADay, access "push"), puis clone.
+git fetch origin && git checkout "$(git remote show origin | sed -n 's/.*HEAD branch: //p')" && git pull
+pip install -q -e .
+cp -n config.example.yaml config.yaml
+```
+
+Lire la clé : connecteur Netlify → `netlify-project-services-updater`, opération `manage-env-vars`,
+`getAllEnvVars: true` sur le site ci-dessus → valeur de `YWIAD_STATE_KEY`. Puis :
+
+```bash
+export YWIAD_STATE_KEY='<valeur>'
+scripts/state.sh pull
+```
+
+### 1. Réponses et rebonds (avant tout envoi)
+
+- `ywiad leads --status contacted --json` → liste des emails contactés.
+- Gmail `search_threads` : `in:inbox newer_than:4d -from:me` puis ne garder que les expéditeurs de
+  la liste ; lire chaque fil avec `get_thread`.
+  - « STOP », refus, « pas intéressé » → `ywiad optout <email>` (aucune réponse).
+  - Intérêt, question, demande de prix → `ywiad inbound <email> "<texte>"` (statut `replied`), puis
+    répondre dans le fil (`reply`) : réponse précise et courte, dans la langue du prospect, avec le
+    prix de l'offre conseillée (`ywiad pricing --market <code>`), le lien de sa maquette, et deux
+    créneaux de 15 min libres dans Google Calendar (jours ouvrés, heures de bureau du prospect).
+  - Intention d'acheter / de payer / de signer → répondre qu'AZ revient vers lui dans la journée, et
+    envoyer à azriouil.az@gmail.com un email « [CLOSING] <commerce> — <offre> — <prix> » avec le fil.
+- Rebonds : `from:(mailer-daemon OR postmaster) newer_than:4d` → pour chaque adresse en échec,
+  retrouver le lead (`ywiad leads --json`), `ywiad mark <id> lost` et `ywiad optout <email>`.
+
+### 2. Prospection
+
+```bash
+ywiad -v run
+```
+
+Découverte (rotation mondiale marché × ville × métier), audit, maquettes, relances dues et premiers
+contacts **mis en file** uniquement pour les marchés en heures de bureau à cet instant.
+
+### 3. Publication des maquettes (avant l'envoi : les liens doivent fonctionner)
+
+```bash
+ywiad site
+```
+
+Connecteur Netlify → `netlify-deploy-services-updater`, opération `deploy-site`, `siteId` ci-dessus →
+exécuter la commande `npx … @netlify/mcp …` renvoyée **depuis le dossier `out/site`** (jamais depuis
+la racine du dépôt). Vérifier ensuite qu'une maquette en file répond en 200.
+
+### 4. Relecture puis envoi
+
+`ywiad queue --json`. Pour chaque message, relecture rapide :
+- nom de commerce plausible (pas une chaîne, une administration, un hôpital, une école) ;
+- langue cohérente avec le pays ; pas de caractères cassés ; lien de maquette présent ;
+- sinon : `ywiad fail <id> --reason "écarté à la relecture"` et `ywiad mark <lead_id> lost`.
+
+Envoi : Gmail `send_message` avec `to: [to_addr]`, `subject`, `body` (texte brut, tel quel) et,
+si `reply_thread_id` est renseigné, `replyThreadId`. Puis immédiatement :
+
+```bash
+ywiad confirm <id> --thread <threadId renvoyé par Gmail>
+```
+
+Échec d'envoi : `ywiad fail <id> --reason "<erreur>"` (ajouter `--bounce` si l'adresse est invalide).
+Pause de 20 à 40 s entre deux envois (`python3 -c "import time,random; time.sleep(random.randint(20,40))"`).
+
+### 5. Sauvegarde et résumé
+
+```bash
+scripts/state.sh push
+ywiad report
+```
+
+Terminer par un résumé court (il part en notification) : nouveaux leads, emails envoyés
+(premiers contacts / relances), réponses et closings, erreurs, valeur du pipeline par marché.
+Le vendredi à l'exécution de 14 h 40 UTC, envoyer aussi ce résumé par email à azriouil.az@gmail.com
+(objet « YWIAD — bilan semaine <n° ISO> »).
+
+## Planning (UTC, jours ouvrés du destinataire)
+
+| Heure UTC | Marchés en fenêtre d'envoi (8 h–18 h locales) |
 |---|---|
-| Clic « Envoyer » tant que le mode est `draft` | Valider le ton et la délivrabilité les premières semaines |
-| Messages WhatsApp | WhatsApp interdit l'automatisation non officielle ; les textes sont prêts à copier |
-| Signature du devis, encaissement | Engagement contractuel et paiement |
-| Production du site final | Claude peut la faire à partir de la maquette, mais la mise en ligne sur le domaine du client demande ses accès |
-
-Pour passer en envoi automatique : `outreach.mode: smtp`, secret `SMTP_PASSWORD`, et commencer
-avec `daily_send_limit` bas (10–20/jour) sur un domaine d'envoi dédié, SPF/DKIM/DMARC configurés.
+| 07:40 lun–ven | Maroc, France, Belgique, Émirats |
+| 14:40 lun–ven | France, Belgique, Maroc, Canada / Québec, États-Unis |
+| 22:40 dim–jeu | Australie (lendemain matin) |

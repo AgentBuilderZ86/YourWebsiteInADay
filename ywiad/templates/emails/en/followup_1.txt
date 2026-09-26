@@ -1,0 +1,12 @@
+Re: {{ original_subject }}
+---
+Hi,
+
+Just following up about {{ lead.name }}'s website.{% if mockup_url %} Your free mock-up is still online here: {{ mockup_url }}{% endif %}
+
+
+{% if has_site or site_down %}The most urgent point: {{ hook }}.{% else %}A simple one-page site is often enough to start showing up in local Google searches.{% endif %} We can fix this in {{ recommended.delivery }} with our {{ recommended.short }} package ({{ recommended.price }}).
+
+Shall I send you a quote?
+
+{% include "emails/en/_signature.txt" %}

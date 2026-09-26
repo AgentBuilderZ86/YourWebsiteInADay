@@ -1,0 +1,9 @@
+{{ business.sender_name }}
+{{ business.name }} — {{ business.website }}
+WhatsApp : {{ business.phone }}
+
+--
+{{ market.legal }}
+{% if business.postal_address %}
+{{ business.name }}, {{ business.postal_address }}
+{% endif %}

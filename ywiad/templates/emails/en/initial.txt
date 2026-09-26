@@ -1,0 +1,34 @@
+{% if has_site or site_down %}{{ lead.name }}: {{ hook }}{% else %}{{ lead.name }}: your customers are looking for you on Google{% endif %}
+---
+Hi,
+
+{% if has_site %}
+I came across {{ lead.name }}'s website ({{ lead.website }}) while looking for a {{ category_label }} in {{ lead.city or "your area" }}. A quick check shows a few issues that are probably costing you customers:
+
+{% for issue in issues[:3] %}
+  • {{ issue.label }}
+{% endfor %}
+
+Overall website score: {{ score }}/100.
+{% elif site_down %}
+While looking for a {{ category_label }} in {{ lead.city or "your area" }}, I tried to visit {{ lead.name }}'s website ({{ lead.website }}), but {% if issues[0].code == 'expired' %}the domain no longer resolves — it has probably expired{% else %}it is currently down{% endif %}. Every customer who lands on an error page goes to a competitor — and Google eventually drops the site from its results.
+{% else %}
+While looking for a {{ category_label }} in {{ lead.city or "your area" }}, I found {{ lead.name }} but no website. Most customers now check opening hours, location and reviews on Google before visiting — without a site, many end up at a competitor.
+{% endif %}
+
+{% if mockup_url %}
+To show you what I mean, I've put together a free mock-up of what your new site could look like:
+{{ mockup_url }}
+
+{% endif %}
+We deliver fast, mobile-first professional websites in record time:
+
+{% for t in tiers %}
+  {% if t.recommended %}→ {% else %}  {% endif %}{{ t.label }}: {{ t.price }} (live in {{ t.delivery }}){% if t.recommended %}  ← recommended for you{% endif %}
+
+{% endfor %}
+
+Would you have 10 minutes this week for a quick chat? Just reply to this email.
+
+Best regards,
+{% include "emails/en/_signature.txt" %}

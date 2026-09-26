@@ -12,7 +12,7 @@ from .audit import audit_url
 from .config import load_config
 from .db import DB, STATUSES
 from .mailer import Mailer
-from .pricing import pricing_table
+from .pricing import enabled_markets, market, pricing_table
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -21,20 +21,34 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("-v", "--verbose", action="store_true")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
-    r = sub.add_parser("run", help="routine complète : découverte, audit, maquettes, contacts, relances, rapport")
+    r = sub.add_parser("run", help="routine complète : découverte, audit, maquettes, file d'envoi, relances, rapport")
     r.add_argument("--skip-discover", action="store_true", help="ne pas chercher de nouveaux leads")
-    sub.add_parser("discover", help="chercher de nouveaux commerçants")
+    sub.add_parser("discover", help="chercher de nouveaux commerçants (cibles suivantes de la rotation)")
     i = sub.add_parser("import", help="importer des leads depuis un CSV")
     i.add_argument("csv")
     sub.add_parser("audit", help="auditer les leads nouveaux")
     a = sub.add_parser("audit-url", help="auditer une URL isolée (démo client)")
     a.add_argument("url")
-    sub.add_parser("mockups", help="générer les maquettes des leads qualifiés")
-    sub.add_parser("outreach", help="premier contact + relances dues")
+    sub.add_parser("site", help="(re)construire le site à déployer : page d'accueil + toutes les maquettes actives")
+    sub.add_parser("outreach", help="mettre en file les premiers contacts et relances dus")
+    q = sub.add_parser("queue", help="emails en attente d'envoi (à envoyer via Gmail)")
+    q.add_argument("--json", action="store_true")
+    c = sub.add_parser("confirm", help="marquer un email de la file comme envoyé")
+    c.add_argument("msg_id", type=int)
+    c.add_argument("--thread", help="threadId Gmail renvoyé par l'envoi (pour rattacher les relances)")
+    f = sub.add_parser("fail", help="marquer un email de la file comme échoué")
+    f.add_argument("msg_id", type=int)
+    f.add_argument("--reason", default="erreur d'envoi")
+    f.add_argument("--bounce", action="store_true", help="adresse invalide : le lead passe en perdu")
+    ib = sub.add_parser("inbound", help="enregistrer une réponse reçue d'un prospect")
+    ib.add_argument("email")
+    ib.add_argument("text")
     sub.add_parser("report", help="générer le rapport du jour")
-    sub.add_parser("pricing", help="afficher la grille tarifaire")
-    ls = sub.add_parser("leads", help="lister les leads")
+    pr = sub.add_parser("pricing", help="afficher la grille tarifaire")
+    pr.add_argument("--market", help="code marché (FR, US, MA…) ; défaut : tous")
+    ls = sub.add_parser("leads", help="lister les leads (par priorité)")
     ls.add_argument("--status", choices=STATUSES)
+    ls.add_argument("--json", action="store_true")
     m = sub.add_parser("mark", help="changer le statut d'un lead (ex. won, lost, replied)")
     m.add_argument("lead_id", type=int)
     m.add_argument("status", choices=STATUSES)
@@ -45,8 +59,7 @@ def main(argv: list[str] | None = None) -> int:
     logging.basicConfig(level=logging.INFO if args.verbose else logging.WARNING, format="%(message)s")
 
     if args.cmd == "audit-url":
-        cfg = load_config(args.config) if args.config else {"audit": {}}
-        res = audit_url(args.url, timeout=cfg["audit"].get("timeout_seconds", 15))
+        res = audit_url(args.url)
         print(json.dumps(res.to_dict(), ensure_ascii=False, indent=2))
         return 0
 
@@ -58,29 +71,54 @@ def main(argv: list[str] | None = None) -> int:
         print(json.dumps(stats, ensure_ascii=False, indent=2))
         print(f"Rapport : {report}")
     elif args.cmd == "discover":
-        print(f"{pipeline.step_discover(db, cfg)} nouveaux leads")
+        n, combos = pipeline.step_discover(db, cfg)
+        print(f"{n} nouveaux leads — cibles : {', '.join(combos)}")
     elif args.cmd == "import":
         print(f"{pipeline.step_import(db, args.csv)} leads importés")
     elif args.cmd == "audit":
         print(pipeline.step_audit(db, cfg))
-    elif args.cmd == "mockups":
-        print(f"{pipeline.step_mockups(db, cfg)} maquettes générées dans {cfg['paths']['mockups']}")
+    elif args.cmd == "site":
+        pipeline.step_mockups(db, cfg)
+        print(f"Site prêt à déployer : {cfg['paths']['site']}")
     elif args.cmd == "outreach":
         mailer = Mailer(cfg)
-        budget = max(0, cfg["outreach"].get("daily_send_limit", 20) - db.sent_today())
+        budget = max(0, cfg["outreach"].get("daily_send_limit", 25) - db.emails_today())
         fu = pipeline.step_followups(db, cfg, mailer, budget)
         print({**fu, **pipeline.step_outreach(db, cfg, mailer, budget - fu["followups"])})
+    elif args.cmd == "queue":
+        msgs = [{**{k: m[k] for k in ("id", "lead_id", "kind", "to_addr", "subject", "body")},
+                 "reply_thread_id": db.lead_thread(m["lead_id"]) if m["kind"] != "initial" else None}
+                for m in db.messages("queued")]
+        if args.json:
+            print(json.dumps(msgs, ensure_ascii=False, indent=2))
+        else:
+            for msg in msgs:
+                print(f"#{msg['id']:<5} {msg['kind']:<11} {msg['to_addr']:<35} {msg['subject']}")
+            print(f"{len(msgs)} email(s) en file")
+    elif args.cmd == "confirm":
+        pipeline.confirm(db, args.msg_id, args.thread)
+        print(f"Message #{args.msg_id} marqué envoyé")
+    elif args.cmd == "fail":
+        pipeline.fail(db, args.msg_id, args.reason, bounce=args.bounce)
+        print(f"Message #{args.msg_id} en échec : {args.reason}")
+    elif args.cmd == "inbound":
+        print(pipeline.inbound(db, args.email, args.text))
     elif args.cmd == "report":
         print(pipeline.write_report(db, cfg, {}))
     elif args.cmd == "pricing":
-        for t in pricing_table(cfg):
-            print(f"\n{t['label']}\n  {t['price']} + {t['monthly']} — livré en {t['delivery']}")
-            for f in t["features"]:
-                print(f"   • {f}")
+        for code in [args.market] if args.market else enabled_markets(cfg):
+            print(f"\n=== {code} — {market(cfg, code)['name']}")
+            for t in pricing_table(cfg, code):
+                print(f"  {t['label']} : {t['price']} + {t['monthly']} — {t['delivery']}")
     elif args.cmd == "leads":
-        for l in db.leads(args.status):
-            print(f"#{l['id']:<4} {l['status']:<13} {str(l['score']):>4}  {l['recommended_tier'] or '-':<9} "
-                  f"{l['name'][:32]:<32} {l['email'] or l['phone'] or ''}")
+        leads = db.leads(args.status)
+        if args.json:
+            print(json.dumps(leads, ensure_ascii=False, indent=2))
+        else:
+            for l in leads:
+                print(f"#{l['id']:<5} {l['market'] or '-':<3} {l['status']:<13} {str(l['score']):>4} "
+                      f"{str(l['priority']):>6}  {l['recommended_tier'] or '-':<9} {l['name'][:30]:<30} "
+                      f"{l['email'] or l['phone'] or ''}")
     elif args.cmd == "mark":
         db.update_lead(args.lead_id, status=args.status)
         print(f"Lead #{args.lead_id} → {args.status}")

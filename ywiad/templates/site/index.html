@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ business.name }} — votre nouveau site en 24 h</title>
+<meta name="description" content="Refonte ou création de site web pour commerçants, livrée en 24 h à 7 jours. Website redesign for local businesses, live in 24 hours.">
+<meta property="og:title" content="{{ business.name }}">
+<meta property="og:description" content="Votre nouveau site en 24 h — Your new website in a day">
+<style>
+  :root { --bg: #fafaf9; --card: #fff; --ink: #1c1917; --muted: #57534e; --line: #e7e5e4; --accent: #2563eb; --accent-ink: #fff; }
+  @media (prefers-color-scheme: dark) { :root { --bg: #0c0a09; --card: #1c1917; --ink: #f5f5f4; --muted: #a8a29e; --line: #292524; --accent: #60a5fa; --accent-ink: #0c0a09; } }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.6; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+  header { padding: 20px 0; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .logo { font-weight: 800; letter-spacing: -.02em; }
+  .hero { padding: 48px 0 32px; }
+  h1 { font-size: clamp(2rem, 6vw, 3.6rem); line-height: 1.05; letter-spacing: -.03em; margin: 0 0 16px; }
+  .lead { font-size: 1.15rem; color: var(--muted); max-width: 640px; margin: 0 0 24px; }
+  .btn { display: inline-block; background: var(--accent); color: var(--accent-ink); padding: 12px 22px; border-radius: 999px; text-decoration: none; font-weight: 600; }
+  .btn.ghost { background: transparent; color: var(--accent); border: 2px solid var(--accent); }
+  .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+  .steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin: 40px 0; }
+  .step { border-top: 2px solid var(--accent); padding-top: 12px; }
+  .step b { display: block; }
+  .step span { color: var(--muted); }
+  .bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; margin: 48px 0 16px; }
+  .bar h2 { margin: 0; }
+  select { font: inherit; padding: 8px 12px; border-radius: 10px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  .tiers { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+  .tier { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
+  .tier.pop { border: 2px solid var(--accent); }
+  .tier h3 { margin: 0 0 4px; }
+  .price { font-size: 2rem; font-weight: 800; letter-spacing: -.02em; }
+  .meta { color: var(--muted); font-size: .95rem; margin-bottom: 12px; }
+  .tier ul { padding-left: 18px; margin: 0; }
+  .market[hidden] { display: none; }
+  footer { color: var(--muted); font-size: .9rem; padding: 48px 0; border-top: 1px solid var(--line); margin-top: 64px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">{{ business.name }}</div>
+    <a class="btn ghost" href="mailto:{{ business.sender_email }}">Contact</a>
+  </header>
+
+  <section class="hero">
+    <h1>Votre nouveau site, en ligne en 24 h.<br>Your new website, live in a day.</h1>
+    <p class="lead">Nous repérons ce qui freine votre site (mobile, sécurité, vitesse, Google) et livrons une version moderne, sans travail de votre côté. — We fix what's holding your website back and ship a modern version, with zero work on your side.</p>
+    <div class="actions">
+      <a class="btn" href="mailto:{{ business.sender_email }}?subject={{ 'Devis / Quote' | urlencode }}">Demander un devis / Get a quote</a>
+      <a class="btn ghost" href="https://wa.me/{{ business.whatsapp }}">WhatsApp</a>
+    </div>
+  </section>
+
+  <div class="steps">
+    <div class="step"><b>1. Audit gratuit / Free audit</b><span>Note sur 100 et points bloquants. Score out of 100 and key issues.</span></div>
+    <div class="step"><b>2. Maquette offerte / Free mock-up</b><span>Vous voyez le résultat avant de décider. See it before you decide.</span></div>
+    <div class="step"><b>3. En ligne / Live</b><span>De 24 h à 7 jours selon l'offre. From 24 hours to 7 days.</span></div>
+  </div>
+
+  <div class="bar">
+    <h2>Tarifs / Pricing</h2>
+    <select id="mk" aria-label="Pays / Country">
+      {% for m in markets %}<option value="{{ m.code }}">{{ m.name }}</option>{% endfor %}
+    </select>
+  </div>
+  {% for m in markets %}
+  <div class="market" data-market="{{ m.code }}" {% if not loop.first %}hidden{% endif %}>
+    <div class="tiers">
+      {% for t in m.tiers %}
+      <div class="tier {% if t.key == 'standard' %}pop{% endif %}">
+        <h3>{{ t.label }}</h3>
+        <div class="price">{{ t.price }}</div>
+        <div class="meta">{{ t.delivery }} · + {{ t.monthly }}</div>
+        <ul>{% for f in t.features %}<li>{{ f }}</li>{% endfor %}</ul>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <footer>{{ business.name }} · {{ business.sender_email }} · WhatsApp {{ business.phone }}{% if business.postal_address %} · {{ business.postal_address }}{% endif %}</footer>
+</div>
+<script>
+  const sel = document.getElementById('mk');
+  const show = c => document.querySelectorAll('.market').forEach(el => el.hidden = el.dataset.market !== c);
+  const langMarket = { 'en-US': 'US', 'en-CA': 'CA', 'fr-CA': 'QC', 'en-AU': 'AU', 'fr-BE': 'BE', 'fr-FR': 'FR', 'fr-MA': 'MA', 'ar-MA': 'MA', 'ar-AE': 'AE' };
+  const guess = langMarket[navigator.language];
+  if (guess && [...sel.options].some(o => o.value === guess)) { sel.value = guess; show(guess); }
+  sel.addEventListener('change', () => show(sel.value));
+</script>
+</body>
+</html>

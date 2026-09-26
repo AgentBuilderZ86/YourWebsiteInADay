@@ -1,0 +1,11 @@
+Re: {{ original_subject }}
+---
+Hi,
+
+Quick note in case it helps: our {{ tiers[0].short }} package starts at {{ tiers[0].price }}, hosting included, and your site is live within {{ tiers[0].delivery }}. No work on your side — we gather your details, photos and Google reviews.
+
+Here's what we'd do for {{ lead.name }}: {{ mockup_url or business.website }}
+
+Do you have 10 minutes this week?
+
+{% include "emails/en/_signature.txt" %}

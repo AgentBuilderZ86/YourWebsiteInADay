@@ -1,115 +1,210 @@
-# Copiez ce fichier en config.yaml puis adaptez-le.
-# Les secrets (mots de passe SMTP, clés API) se passent par variables d'environnement.
+# Configuration YourWebsiteInADay.
+# Les secrets (mots de passe, clés API) se passent par variables d'environnement, jamais ici.
 
 business:
   name: "YourWebsiteInADay"
-  sender_name: "Votre Nom"
-  sender_email: "contact@votre-domaine.com"
-  phone: "+212 6 00 00 00 00"
-  website: "https://votre-domaine.com"
-  # Adresse légale affichée en pied d'email (obligatoire en prospection B2B)
-  legal_footer: "YourWebsiteInADay — RC 000000 — Casablanca, Maroc"
-  currency: "MAD"
-  # URL publique où sont hébergées les maquettes (ex. site Netlify). Laisser vide pour ne pas inclure de lien.
-  mockup_base_url: ""
+  sender_name: "AZ"
+  sender_email: "azriouil.az@gmail.com"
+  phone: "+212 6 62 45 81 51"
+  whatsapp: "212662458151"
+  # Site vitrine de l'offre (page d'accueil du site Netlify des maquettes)
+  website: "https://yourwebsiteinaday.netlify.app"
+  # Les maquettes sont publiées sous <mockup_base_url>/<slug>/
+  mockup_base_url: "https://yourwebsiteinaday.netlify.app/demo"
+  # Adresse postale de l'expéditeur : OBLIGATOIRE pour les États-Unis (CAN-SPAM) et le Canada (LCAP/CASL).
+  # Tant qu'elle est vide, les marchés marqués requires_postal_address ne reçoivent aucun email.
+  postal_address: ""
+
+# Marchés ciblés. Seuls les marchés enabled: true sont prospectés.
+# Exclus volontairement : Allemagne, Autriche, Suisse (consentement préalable exigé même en B2B).
+markets:
+  FR:
+    enabled: true
+    name: "France"
+    language: fr
+    currency: "€"
+    timezone: "Europe/Paris"
+    cities: ["Paris", "Lyon", "Marseille", "Bordeaux", "Nantes", "Lille", "Toulouse", "Nice", "Montpellier", "Strasbourg"]
+    prices: { basique: 490, standard: 1290, premium: 2900 }
+    monthly: { basique: 29, standard: 49, premium: 99 }
+    legal: >-
+      Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
+      concerne directement votre activité (art. L34-5 du CPCE). Répondez « STOP » pour ne plus être
+      contacté : vos coordonnées seront alors supprimées de notre fichier.
+  BE:
+    enabled: true
+    name: "Belgique"
+    language: fr
+    currency: "€"
+    timezone: "Europe/Brussels"
+    cities: ["Bruxelles", "Liège", "Namur", "Charleroi", "Mons"]
+    prices: { basique: 490, standard: 1290, premium: 2900 }
+    monthly: { basique: 29, standard: 49, premium: 99 }
+    legal: >-
+      Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
+      concerne directement votre activité. Répondez « STOP » pour ne plus être contacté : vos
+      coordonnées seront supprimées.
+  MA:
+    enabled: true
+    name: "Maroc"
+    language: fr
+    currency: "MAD"
+    timezone: "Africa/Casablanca"
+    cities: ["Casablanca", "Rabat", "Marrakech", "Tanger", "Agadir", "Fès"]
+    prices: { basique: 2990, standard: 6990, premium: 14990 }
+    monthly: { basique: 149, standard: 290, premium: 590 }
+    legal: >-
+      Vous recevez ce message car les coordonnées de votre activité sont publiques (loi 09-08).
+      Répondez « STOP » pour ne plus être contacté : vos données seront supprimées.
+  CA:
+    enabled: true
+    name: "Canada"
+    language: en
+    currency: "CAD"
+    timezone: "America/Toronto"
+    requires_postal_address: true
+    cities: ["Toronto", "Vancouver", "Calgary", "Ottawa"]
+    prices: { basique: 790, standard: 1990, premium: 4500 }
+    monthly: { basique: 39, standard: 69, premium: 149 }
+    legal: >-
+      You are receiving this one-off business message because your business email is publicly listed
+      and our offer relates to your business. Reply "STOP" to unsubscribe; we will honour it immediately.
+  QC:
+    enabled: true
+    name: "Québec"
+    country_code: "CA"
+    language: fr
+    currency: "$ CA"
+    timezone: "America/Montreal"
+    requires_postal_address: true
+    cities: ["Montréal", "Québec", "Laval", "Gatineau"]
+    prices: { basique: 790, standard: 1990, premium: 4500 }
+    monthly: { basique: 39, standard: 69, premium: 149 }
+    legal: >-
+      Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
+      concerne votre activité. Répondez « STOP » pour vous désabonner ; ce sera pris en compte immédiatement.
+  US:
+    enabled: true
+    name: "United States"
+    language: en
+    currency: "$"
+    currency_prefix: true
+    timezone: "America/New_York"
+    requires_postal_address: true
+    cities: ["Miami", "Austin", "Atlanta", "Charlotte", "Tampa", "Nashville", "Denver", "Orlando"]
+    prices: { basique: 590, standard: 1490, premium: 3490 }
+    monthly: { basique: 29, standard: 59, premium: 129 }
+    legal: >-
+      This is a commercial message. You are receiving it because your business email is publicly
+      listed. Reply "STOP" to opt out; we will not contact you again.
+  AU:
+    enabled: true
+    name: "Australia"
+    language: en
+    currency: "AUD"
+    timezone: "Australia/Sydney"
+    cities: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast"]
+    prices: { basique: 790, standard: 1990, premium: 4900 }
+    monthly: { basique: 39, standard: 79, premium: 159 }
+    legal: >-
+      You are receiving this message because your business email is conspicuously published and our
+      offer relates to your business. Reply "STOP" to unsubscribe.
+  AE:
+    enabled: true
+    name: "United Arab Emirates"
+    language: en
+    currency: "AED"
+    timezone: "Asia/Dubai"
+    cities: ["Dubai", "Abu Dhabi", "Sharjah"]
+    prices: { basique: 1990, standard: 4990, premium: 11900 }
+    monthly: { basique: 99, standard: 199, premium: 449 }
+    legal: >-
+      You are receiving this message because your business contact details are publicly listed.
+      Reply "STOP" to unsubscribe.
+  GB:
+    # Désactivé : au Royaume-Uni (PECR), les entrepreneurs individuels et partnerships
+    # doivent avoir consenti — impossible à distinguer automatiquement des Ltd.
+    enabled: false
+    name: "United Kingdom"
+    language: en
+    currency: "£"
+    currency_prefix: true
+    timezone: "Europe/London"
+    cities: ["London", "Manchester", "Birmingham", "Leeds", "Bristol"]
+    prices: { basique: 450, standard: 1190, premium: 2790 }
+    monthly: { basique: 25, standard: 49, premium: 99 }
+    legal: 'Reply "STOP" to unsubscribe.'
 
 prospecting:
-  area: "Casablanca"
-  country_code: "MA"
-  # Sources : osm (gratuit, sans clé), google (clé GOOGLE_PLACES_API_KEY requise), csv (via `ywiad import`)
   sources: ["osm"]
-  # Catégories ciblées : clé interne -> (tag OpenStreetMap, requête Google Maps)
+  # Catégories : tag OpenStreetMap, valeur commerciale (poids dans la priorisation), offre conseillée
   categories:
-    restaurant: { osm: "amenity=restaurant", google: "restaurant" }
-    cafe: { osm: "amenity=cafe", google: "café" }
-    hairdresser: { osm: "shop=hairdresser", google: "salon de coiffure" }
-    beauty: { osm: "shop=beauty", google: "institut de beauté" }
-    bakery: { osm: "shop=bakery", google: "boulangerie pâtisserie" }
-    clothes: { osm: "shop=clothes", google: "boutique de vêtements" }
-    florist: { osm: "shop=florist", google: "fleuriste" }
-    optician: { osm: "shop=optician", google: "opticien" }
-    dentist: { osm: "amenity=dentist", google: "dentiste" }
-    hotel: { osm: "tourism=hotel", google: "hôtel" }
-    car_repair: { osm: "shop=car_repair", google: "garage automobile" }
-  max_leads_per_run: 50
-  # Inclure les commerces SANS site web (offre "création" plutôt que "refonte")
+    hotel: { osm: "tourism=hotel", value: 1.5, tier: premium, fr: "hôtel", en: "hotel" }
+    dentist: { osm: "amenity=dentist", value: 1.5, tier: standard, fr: "cabinet dentaire", en: "dental practice" }
+    estate_agent: { osm: "office=estate_agent", value: 1.4, tier: standard, fr: "agence immobilière", en: "real estate agency" }
+    restaurant: { osm: "amenity=restaurant", value: 1.2, tier: standard, fr: "restaurant", en: "restaurant" }
+    beauty: { osm: "shop=beauty", value: 1.2, tier: standard, fr: "institut de beauté", en: "beauty salon" }
+    hairdresser: { osm: "shop=hairdresser", value: 1.1, tier: standard, fr: "salon de coiffure", en: "hair salon" }
+    optician: { osm: "shop=optician", value: 1.1, tier: standard, fr: "opticien", en: "optician" }
+    florist: { osm: "shop=florist", value: 1.0, tier: premium, fr: "fleuriste", en: "florist" }
+    clothes: { osm: "shop=clothes", value: 1.0, tier: premium, fr: "boutique", en: "boutique" }
+    car_repair: { osm: "shop=car_repair", value: 1.0, tier: basique, fr: "garage", en: "auto repair shop" }
+    bakery: { osm: "shop=bakery", value: 0.9, tier: basique, fr: "boulangerie", en: "bakery" }
+    cafe: { osm: "amenity=cafe", value: 0.8, tier: basique, fr: "café", en: "café" }
+  # Nombre de combinaisons (marché, ville, catégorie) explorées par exécution — tournantes
+  combos_per_run: 6
+  max_leads_per_run: 80
+  # Les commerces sans site ne sont gardés que s'ils ont un email public (sinon injoignables)
   include_no_website: true
 
 audit:
   timeout_seconds: 15
-  # Un site est considéré "mauvais" (donc prospect) sous ce score /100
   bad_site_threshold: 60
-  # Optionnel : clé Google PageSpeed Insights via la variable PAGESPEED_API_KEY
   use_pagespeed: false
 
 pricing:
   tiers:
     basique:
-      label: "Basique — Site vitrine express"
-      price: 2990
-      delivery: "24 h"
-      monthly: 149
+      label: { fr: "Basique — Site vitrine express", en: "Starter — Express one-page site" }
+      delivery: { fr: "24 h", en: "24 hours" }
       features:
-        - "Site one-page responsive (mobile d'abord)"
-        - "Vos infos clés : horaires, adresse, carte, téléphone, WhatsApp"
-        - "HTTPS + hébergement 1 an inclus"
-        - "Référencement Google de base (Google Business Profile relié)"
+        fr: ["Site one-page responsive (mobile d'abord)", "Horaires, adresse, carte, téléphone, WhatsApp", "HTTPS + hébergement 1 an inclus", "Fiche Google Business reliée"]
+        en: ["Mobile-first one-page website", "Hours, address, map, phone, WhatsApp", "HTTPS + 1 year hosting included", "Google Business Profile linked"]
     standard:
-      label: "Standard — Site professionnel"
-      price: 6990
-      delivery: "72 h"
-      monthly: 290
+      label: { fr: "Standard — Site professionnel", en: "Business — Professional website" }
+      delivery: { fr: "72 h", en: "72 hours" }
       features:
-        - "Tout le Basique"
-        - "Jusqu'à 5 pages (accueil, services/menu, galerie, avis, contact)"
-        - "Formulaire de contact + prise de rendez-vous / réservation"
-        - "SEO local avancé (balisage, vitesse, contenus optimisés)"
-        - "Rédaction des textes incluse"
+        fr: ["Tout le Basique", "Jusqu'à 5 pages", "Prise de rendez-vous / réservation", "SEO local avancé", "Rédaction des textes incluse"]
+        en: ["Everything in Starter", "Up to 5 pages", "Online booking / appointments", "Advanced local SEO", "Copywriting included"]
     premium:
-      label: "Premium — Site sur-mesure & vente en ligne"
-      price: 14990
-      delivery: "7 jours"
-      monthly: 590
+      label: { fr: "Premium — Sur-mesure & vente en ligne", en: "Premium — Custom site & online sales" }
+      delivery: { fr: "7 jours", en: "7 days" }
       features:
-        - "Tout le Standard"
-        - "Boutique en ligne ou réservation avec paiement"
-        - "Design sur-mesure + shooting photo retouché (sélection)"
-        - "Multilingue (FR / AR / EN)"
-        - "Statistiques + rapport mensuel de performance"
-  # Offre recommandée par défaut selon la catégorie (sinon "standard")
-  category_tier:
-    restaurant: standard
-    cafe: basique
-    hairdresser: standard
-    beauty: standard
-    bakery: basique
-    clothes: premium
-    florist: premium
-    optician: standard
-    dentist: standard
-    hotel: premium
-    car_repair: basique
+        fr: ["Tout le Standard", "Boutique ou réservation avec paiement", "Design sur-mesure", "Multilingue", "Rapport mensuel de performance"]
+        en: ["Everything in Business", "Online shop or paid bookings", "Custom design", "Multilingual", "Monthly performance report"]
 
 outreach:
-  # draft  : génère les emails dans out/outbox/ (aucun envoi) — RECOMMANDÉ pour démarrer
-  # smtp   : envoie réellement via SMTP (SMTP_PASSWORD en variable d'environnement)
-  mode: draft
-  daily_send_limit: 20
-  # Relances à J+N après le premier contact (puis passage en "perdu")
+  # queue : les emails sont mis en file ; Claude les envoie via Gmail (`ywiad queue`, puis `ywiad confirm`)
+  # smtp  : envoi direct par SMTP (SMTP_PASSWORD en variable d'environnement)
+  mode: queue
+  # Plafond quotidien (premiers contacts + relances). Gmail perso : rester bas pour protéger la réputation.
+  daily_send_limit: 25
+  # Heures locales du destinataire pendant lesquelles on envoie (jours ouvrés uniquement)
+  send_window: [8, 18]
   followup_days: [3, 7, 14]
   smtp:
-    host: "smtp.votre-fournisseur.com"
+    host: "smtp.gmail.com"
     port: 587
-    username: "contact@votre-domaine.com"
-  # Vérification des réponses par IMAP (optionnel, IMAP_PASSWORD en variable d'environnement)
+    username: "azriouil.az@gmail.com"
   imap:
     enabled: false
-    host: "imap.votre-fournisseur.com"
+    host: "imap.gmail.com"
     port: 993
-    username: "contact@votre-domaine.com"
+    username: "azriouil.az@gmail.com"
 
 paths:
   database: "data/ywiad.sqlite"
+  mockups: "out/site/demo"
+  site: "out/site"
   outbox: "out/outbox"
-  mockups: "out/mockups"
   reports: "out/reports"

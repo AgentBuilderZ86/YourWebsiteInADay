@@ -1,0 +1,11 @@
+Re: {{ original_subject }}
+---
+Bonjour,
+
+Une précision qui peut vous intéresser : l'offre {{ tiers[0].short }} démarre à {{ tiers[0].price }}, hébergement inclus, et le site est en ligne en {{ tiers[0].delivery }}. Aucun travail de votre côté : nous récupérons vos informations, vos photos et vos avis Google.
+
+Voici ce que nous ferions pour {{ lead.name }} : {{ mockup_url or business.website }}
+
+Un créneau de 10 minutes cette semaine ?
+
+{% include "emails/fr/_signature.txt" %}

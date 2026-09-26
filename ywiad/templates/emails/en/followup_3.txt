@@ -1,0 +1,10 @@
+Re: {{ original_subject }}
+---
+Hi,
+
+I don't want to be a nuisance, so this will be my last message.
+
+If updating {{ lead.name }}'s website becomes a priority, just reply to this email — the mock-up and audit remain available.
+
+All the best,
+{% include "emails/en/_signature.txt" %}

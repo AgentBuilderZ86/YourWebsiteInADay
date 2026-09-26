@@ -1,4 +1,4 @@
-"""Envoi (SMTP) ou mise en brouillon (fichiers .eml) des emails, et lecture des réponses (IMAP)."""
+"""Envoi SMTP direct et lecture des réponses (IMAP) — alternative au mode file d'attente + Gmail."""
 
 from __future__ import annotations
 
@@ -10,7 +10,6 @@ import smtplib
 from datetime import datetime, timedelta
 from email.message import EmailMessage
 from email.utils import make_msgid, parseaddr
-from pathlib import Path
 from typing import Any
 
 
@@ -29,25 +28,18 @@ def build_message(cfg: dict[str, Any], to: str, subject: str, body: str) -> Emai
 class Mailer:
     def __init__(self, cfg: dict[str, Any]):
         self.cfg = cfg
-        self.mode = cfg["outreach"].get("mode", "draft")
-        self.outbox = Path(cfg["paths"]["outbox"])
+        self.mode = cfg["outreach"].get("mode", "queue")
 
-    def send(self, lead_id: int, kind: str, to: str, subject: str, body: str) -> bool:
-        """Retourne True si l'email est réellement parti, False s'il est en brouillon."""
-        msg = build_message(self.cfg, to, subject, body)
-        if self.mode == "smtp":
-            s = self.cfg["outreach"]["smtp"]
-            password = os.environ.get("SMTP_PASSWORD")
-            if not password:
-                raise RuntimeError("SMTP_PASSWORD manquant : impossible d'envoyer en mode smtp")
-            with smtplib.SMTP(s["host"], s.get("port", 587), timeout=30) as smtp:
-                smtp.starttls()
-                smtp.login(s["username"], password)
-                smtp.send_message(msg)
-            return True
-        self.outbox.mkdir(parents=True, exist_ok=True)
-        (self.outbox / f"{lead_id:05d}-{kind}.eml").write_bytes(bytes(msg))
-        return False
+    def send(self, lead_id: int, kind: str, to: str, subject: str, body: str) -> None:
+        """Envoi SMTP direct (mode smtp). En mode queue, c'est Claude qui envoie via Gmail."""
+        s = self.cfg["outreach"]["smtp"]
+        password = os.environ.get("SMTP_PASSWORD")
+        if not password:
+            raise RuntimeError("SMTP_PASSWORD manquant : impossible d'envoyer en mode smtp")
+        with smtplib.SMTP(s["host"], s.get("port", 587), timeout=30) as smtp:
+            smtp.starttls()
+            smtp.login(s["username"], password)
+            smtp.send_message(build_message(self.cfg, to, subject, body))
 
 
 def fetch_replies(cfg: dict[str, Any], since_days: int = 30) -> list[tuple[str, str]]:

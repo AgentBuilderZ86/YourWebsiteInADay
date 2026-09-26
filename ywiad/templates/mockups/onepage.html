@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="fr">
+<html lang="{{ lang }}">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{ lead.name }}{% if lead.city %} — {{ lead.city }}{% endif %}</title>
-<meta name="description" content="{{ lead.name }} : {{ theme.tagline }}.{% if lead.address %} {{ lead.address }}.{% endif %}">
+<meta name="description" content="{{ lead.name }} : {{ tagline }}.{% if lead.address %} {{ lead.address }}.{% endif %}">
 <meta property="og:title" content="{{ lead.name }}">
-<meta property="og:description" content="{{ theme.tagline }}">
+<meta property="og:description" content="{{ tagline }}">
 <meta name="robots" content="noindex">
 <style>
   :root { --accent: {{ theme.accent }}; --bg: {{ theme.bg }}; --ink: #1c1917; --muted: #57534e; }
@@ -21,32 +21,33 @@
   .hero { max-width: 1040px; margin: 0 auto; padding: 3rem 1rem 4rem; display: grid; gap: 2rem; grid-template-columns: 1.2fr 1fr; align-items: center; }
   .hero h1 { font-size: clamp(2rem, 5vw, 3.4rem); line-height: 1.1; margin: 0 0 1rem; letter-spacing: -.03em; }
   .hero p { color: var(--muted); font-size: 1.15rem; margin: 0 0 1.5rem; }
-  .visual { aspect-ratio: 4/3; border-radius: 24px; background: linear-gradient(135deg, var(--accent), #0000 140%), var(--accent); display: grid; place-items: center; font-size: 6rem; box-shadow: 0 30px 60px -30px var(--accent); }
+  .visual { aspect-ratio: 4/3; border-radius: 24px; background: var(--accent); display: grid; place-items: center; font-size: 6rem; box-shadow: 0 30px 60px -30px var(--accent); }
   section { max-width: 1040px; margin: 0 auto; padding: 3rem 1rem; }
   .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
   .card { background: #fff; border-radius: 16px; padding: 1.5rem; box-shadow: 0 1px 3px #0001; }
   .card h3 { margin: 0 0 .5rem; color: var(--accent); }
-  footer { background: #1c1917; color: #d6d3d1; padding: 2rem 1rem; text-align: center; font-size: .9rem; }
+  footer { background: #1c1917; color: #d6d3d1; padding: 2rem 1rem 5rem; text-align: center; font-size: .9rem; }
   .actions { display: flex; flex-wrap: wrap; gap: .75rem; }
   .wa { position: fixed; right: 1rem; bottom: 1rem; background: #25d366; color: #fff; border-radius: 999px; padding: .9rem 1.2rem; font-weight: 700; text-decoration: none; box-shadow: 0 10px 30px #0003; }
   @media (max-width: 760px) { .hero { grid-template-columns: 1fr; padding-top: 1.5rem; } .visual { font-size: 4rem; } }
 </style>
 </head>
 <body>
-<div class="banner">Maquette de démonstration réalisée par {{ business.name }} pour {{ lead.name }} — <a href="{{ business.website }}">en savoir plus</a></div>
+<div class="banner">{{ t.banner.format(biz=business.name, name=lead.name) }} — <a href="{{ business.website }}">{{ t.more }}</a></div>
 <header>
   <div class="logo">{{ lead.name }}</div>
-  {% if lead.phone %}<a class="btn ghost" href="tel:{{ lead.phone.split(';')[0] | replace(' ', '') }}">Appeler</a>{% endif %}
+  {% if lead.phone %}<a class="btn ghost" href="tel:{{ lead.phone.split(';')[0] | replace(' ', '') }}">{{ t.call }}</a>{% endif %}
 </header>
 
 <div class="hero">
   <div>
-    <h1>{{ theme.tagline }}</h1>
-    <p>{{ lead.name }}{% if lead.city %}, à {{ lead.city }}{% endif %}. Retrouvez nos services, nos horaires et contactez-nous en un clic.</p>
+    <h1>{{ tagline }}</h1>
+    <p>{{ lead.name }}{% if lead.city %}, {{ t.in }} {{ lead.city }}{% endif %}. {{ t.intro }}</p>
     <div class="actions">
-      {% if whatsapp %}<a class="btn" href="https://wa.me/{{ whatsapp }}">{{ theme.cta }}</a>
-      {% elif lead.phone %}<a class="btn" href="tel:{{ lead.phone.split(';')[0] | replace(' ', '') }}">{{ theme.cta }}</a>{% endif %}
-      {% if lead.address %}<a class="btn ghost" href="https://www.google.com/maps/search/?api=1&query={{ (lead.name ~ ' ' ~ lead.address) | urlencode }}">Itinéraire</a>{% endif %}
+      {% if whatsapp %}<a class="btn" href="https://wa.me/{{ whatsapp }}">{{ cta }}</a>
+      {% elif lead.phone %}<a class="btn" href="tel:{{ lead.phone.split(';')[0] | replace(' ', '') }}">{{ cta }}</a>
+      {% elif lead.email %}<a class="btn" href="mailto:{{ lead.email }}">{{ cta }}</a>{% endif %}
+      {% if lead.address or lead.city %}<a class="btn ghost" href="https://www.google.com/maps/search/?api=1&query={{ (lead.name ~ ' ' ~ (lead.address or lead.city)) | urlencode }}">{{ t.directions }}</a>{% endif %}
     </div>
   </div>
   <div class="visual" aria-hidden="true">{{ theme.icon }}</div>
@@ -54,14 +55,14 @@
 
 <section>
   <div class="cards">
-    <div class="card"><h3>Nos services</h3><p>Présentez ici vos prestations phares, vos prix et vos nouveautés.</p></div>
-    <div class="card"><h3>Horaires</h3><p>{{ hours or "Du lundi au samedi — horaires à compléter" }}</p></div>
-    <div class="card"><h3>Nous trouver</h3><p>{{ lead.address or lead.city or "Adresse à compléter" }}</p></div>
-    <div class="card"><h3>Avis clients</h3><p>Vos meilleurs avis Google mis en avant pour rassurer les nouveaux clients.</p></div>
+    <div class="card"><h3>{{ t.services }}</h3><p>{{ t.services_txt }}</p></div>
+    <div class="card"><h3>{{ t.hours }}</h3><p>{{ hours or t.hours_txt }}</p></div>
+    <div class="card"><h3>{{ t.find }}</h3><p>{{ lead.address or lead.city or t.find_txt }}</p></div>
+    <div class="card"><h3>{{ t.reviews }}</h3><p>{{ t.reviews_txt }}</p></div>
   </div>
 </section>
 
-<footer>© {{ lead.name }} — Site réalisé en 24 h par {{ business.name }}</footer>
+<footer>© {{ lead.name }} — {{ t.made }} {{ business.name }}</footer>
 {% if whatsapp %}<a class="wa" href="https://wa.me/{{ whatsapp }}">WhatsApp</a>{% endif %}
 </body>
 </html>

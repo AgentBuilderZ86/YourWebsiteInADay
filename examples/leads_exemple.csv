@@ -1,3 +1,3 @@
-name,category,website,email,phone,address,city
-Salon Nour,hairdresser,,,0612345678,12 rue Tarik,Casablanca
-Pâtisserie Les Délices,bakery,http://exemple-sans-reseau.invalid,delices@example.org,0522000000,45 bd Zerktouni,Casablanca
+name,category,market,website,email,phone,address,city
+Salon Nour,hairdresser,MA,,,0612345678,12 rue Tarik,Casablanca
+Bloom & Co,florist,AU,http://bloomandco.example,hello@bloomandco.example,,,Sydney
