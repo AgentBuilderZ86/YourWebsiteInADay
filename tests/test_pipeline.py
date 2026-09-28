@@ -236,7 +236,7 @@ def test_email_rendering_english_no_site(cfg):
             "recommended_tier": "standard", "extra": {}, "phone": "0400000000"}
     subject, body = render_email("initial", lead, cfg, mockup_url="https://x/y/")
     assert subject == "Bloom & Co: your customers are looking for you online"
-    assert "no website" in body and "https://x/y/" in body and "recommended for you" in body
+    assert "couldn't find a website" in body and "https://x/y/" in body and "recommended for you" in body
     assert "No website: customers" not in body  # pas de puce redondante
     assert "1,990 AUD" in body and "Reply \"STOP\"" in body
     assert "790 AUD" in render_whatsapp(lead, cfg)
@@ -403,7 +403,7 @@ def test_social_only_email_names_the_platform():
             "issues": [{"code": "no_site", "penalty": 100, "params": {}}],
             "extra": {"social": "https://www.facebook.com/chezlulu"}}
     subject, body = render_email("initial", lead, cfg, mockup_url="https://x/demo/")
-    assert "sur Facebook, mais pas de site à votre nom" in body
+    assert "sur Facebook, mais aucun site à votre nom" in body
     html = render_email_html("initial", lead, cfg, mockup_url="https://x/demo/")
     assert "Pas de site à votre nom" in html and "votre page Facebook" in html
 

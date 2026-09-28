@@ -57,7 +57,7 @@ class Issue:
 # Phrases destinées au commerçant, par langue
 ISSUE_LABELS: dict[str, dict[str, str]] = {
     "fr": {
-        "no_site": "Aucun site web : vos clients ne vous trouvent pas sur Google",
+        "no_site": "Aucun site web trouvé à votre nom",
         "down": "Le site est inaccessible (erreur {status})",
         "expired": "Le nom de domaine {host} ne répond plus (probablement expiré) : votre site a disparu d'internet",
         "listing": "L'adresse {host} n'affiche qu'une liste de fichiers techniques (« Index of / ») : vos clients n'y voient pas votre site",
@@ -83,7 +83,7 @@ ISSUE_LABELS: dict[str, dict[str, str]] = {
         "no_domain": "Pas de nom de domaine propre ({host}) : image peu professionnelle",
     },
     "en": {
-        "no_site": "No website: customers can't find you on Google",
+        "no_site": "No website found under your name",
         "down": "The website is down (error {status})",
         "expired": "The domain {host} no longer resolves (probably expired): your website has vanished from the internet",
         "listing": "{host} only shows a raw file listing (\"Index of /\"): customers don't see your website there",
@@ -486,7 +486,10 @@ def _fold(text: str) -> str:
     return " ".join(re.findall(r"[a-z0-9]+", text.replace("'", " ").replace("’", " ")))
 
 
-def own_site_candidates(name: str, email: str | None, city: str | None = None) -> list[str]:
+MARKET_TLDS = {"MA": ("ma",), "BE": ("be",), "AE": ("ae",), "AU": ("com.au",), "CA": ("ca",), "QC": ("ca",)}
+
+
+def own_site_candidates(name: str, email: str | None, city: str | None = None, market: str | None = None) -> list[str]:
     """Domaines plausibles : nom (collé, avec tirets, sans article), partie locale de l'email, ± « lyon »…"""
     words = _fold(name).split()
     core = [w for w in words if w not in ("le", "la", "les", "l", "chez", "de", "du", "des", "et")] or words
@@ -497,17 +500,18 @@ def own_site_candidates(name: str, email: str | None, city: str | None = None) -
     c = "".join(_fold(city or "").split()[:1])
     if c:
         bases |= {f"{b}-{c}" for b in bases} | {f"{b}{c}" for b in bases if "-" not in b}
-    return sorted({f"{b}.{tld}" for b in bases for tld in ("fr", "com")})
+    tlds = ("fr", "com") + MARKET_TLDS.get((market or "").upper(), ())
+    return sorted({f"{b}.{tld}" for b in bases for tld in tlds})
 
 
-def find_own_site(name: str, email: str | None, city: str | None, *, timeout: int = 10) -> tuple[str | None, str | None]:
+def find_own_site(name: str, email: str | None, city: str | None, *, market: str | None = None, timeout: int = 10) -> tuple[str | None, str | None]:
     """Cherche un site à son nom. Retourne (url, None) si trouvé, (url, "construction") si le domaine
     affiche une page « en construction », (None, None) sinon. Un site n'est retenu que si sa page cite le
     nom du commerce ET sa ville : un homonyme ailleurs (terramia.com, marathon à New York) est ignoré."""
     words = _fold(name).split()
     core = " ".join(w for w in words if w not in ("le", "la", "les", "l", "chez")) or " ".join(words)
     city_f = _fold(city or "")
-    for domain in own_site_candidates(name, email, city):
+    for domain in own_site_candidates(name, email, city, market):
         if domain_exists(domain) is not True:
             continue
         try:

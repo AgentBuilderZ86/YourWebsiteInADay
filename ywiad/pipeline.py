@@ -92,7 +92,7 @@ def step_audit(db: DB, cfg: dict[str, Any], auditor: Callable[..., Any] = audit_
         guessed = website_from_email(lead)
         if not guessed and not lead.get("website"):
             # Jamais « aucun site » sans avoir cherché un domaine à son nom
-            guessed, state = find_own_site(lead["name"], lead.get("email"), lead.get("city"))
+            guessed, state = find_own_site(lead["name"], lead.get("email"), lead.get("city"), market=lead.get("market"))
             if state == "construction":
                 extra = {**(lead.get("extra") or {}), "audit_note": f"site en construction sur {guessed}"}
                 db.update_lead(lead["id"], status="disqualified", extra=extra)
