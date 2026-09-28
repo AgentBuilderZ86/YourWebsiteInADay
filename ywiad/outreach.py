@@ -110,8 +110,12 @@ HOOKS = {
 
 
 def de_name(name: str) -> str:
-    """Préposition « de » avec élision devant voyelle ou h muet : « d'Institut », « de Shine Spa »."""
-    first = name.lstrip()[:1].lower()
+    """Préposition « de » avec élision devant voyelle ou h muet : « d'Institut », « de Shine Spa », « du 44 Rue des Fripiers »."""
+    name = name.strip()
+    for article, contracted in (("Le ", "du "), ("Les ", "des ")):
+        if name.startswith(article) or name.startswith(article.lower()):
+            return contracted + name[len(article):]
+    first = name[:1].lower()
     return f"d'{name}" if first and first in "aeiouyhâàéèêîïôûœ" else f"de {name}"
 
 
