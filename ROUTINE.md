@@ -81,6 +81,8 @@ scripts/state.sh pull
     Après intervention : remesurer et envoyer le score avant/après au client (preuve à l'appui).
     Argument prix : l'audit seul se facture 1 500 à 3 000 € en agence (MA : 1 500 à 4 000 MAD ; un mois de
     SEO 3 000 à 8 000 MAD), sans mise en œuvre. Le montant est déduit d'une refonte commandée sous 30 jours.
+  - Prix annoncé = prix tenu : un prospect contacté avant la grille de sept. 2026 garde le prix de son email
+    (le relire dans le fil avant de répondre).
   - Argument GEO : chaque prospect a son rapport « Audit SEO & GEO » (`<maquette>/audit/`). Le citer
     quand il hésite : ses recommandations sont incluses dans la refonte (Basique : bases GEO ;
     Standard : audit complet mis en œuvre ; Premium : + suivi mensuel). Ne citer que les points du rapport.
