@@ -11,7 +11,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
-from .audit import find_own_site, FREE_MAIL, audit_url, best_emails, issue_dict
+from .audit import geo_score, find_own_site, FREE_MAIL, audit_url, best_emails, issue_dict
 from .db import DB, now_iso
 from .discover import discover, import_csv, next_combos, social_platform
 from .mailer import Mailer, fetch_replies
@@ -66,6 +66,20 @@ def website_from_email(lead: dict[str, Any]) -> str | None:
     return None if domain in FREE_MAIL else f"https://{domain}"
 
 
+def is_geo_prospect(cfg: dict[str, Any], result: Any) -> bool:
+    """Site correct, joignable et vérifié, mais note SEO/GEO sous le seuil : cible de l'Audit GEO seul."""
+    a = cfg["audit"]
+    g = geo_score(getattr(result, "geo", None))
+    return bool(a.get("geo_offer")) and result.verified and result.reachable and g is not None \
+        and g < a.get("geo_threshold", 50)
+
+
+def geo_priority(cfg: dict[str, Any], lead: dict[str, Any], result: Any) -> float:
+    """Moins prioritaire qu'une refonte (panier plus petit) : ~40 % du poids d'un site à refaire."""
+    cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {})
+    return round((100 - (geo_score(result.geo) or 0)) * cat.get("value", 1.0) * 0.4, 1)
+
+
 def priority(cfg: dict[str, Any], lead: dict[str, Any], score: int, issues: list[Any] | None = None) -> float:
     """Plus c'est haut, plus le lead est prometteur : site mauvais × valeur du métier × joignabilité."""
     cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {})
@@ -112,8 +126,13 @@ def step_audit(db: DB, cfg: dict[str, Any], auditor: Callable[..., Any] = audit_
         # L'email public (OSM) est vérifié comme ceux trouvés sur le site
         candidates = best_emails(([lead["email"]] if lead.get("email") else []) + result.emails, lead.get("website"))
         email = candidates[0] if candidates else None
-        if not result.verified or result.score >= threshold or (not lead.get("website") and not include_no_site):
+        offer = None
+        if not result.verified or (not lead.get("website") and not include_no_site):
             status = "disqualified"
+        elif result.score >= threshold:
+            # Site correct : pas de refonte à vendre… sauf s'il est peu lisible par Google et les IA
+            status = "qualified" if (email and is_geo_prospect(cfg, result)) else "disqualified"
+            offer = "geo" if status == "qualified" else None
         elif email or lead.get("market") in WHATSAPP_MARKETS:
             status = "qualified"
         else:
@@ -123,9 +142,9 @@ def step_audit(db: DB, cfg: dict[str, Any], auditor: Callable[..., Any] = audit_
             score=result.score,
             issues=[issue_dict(i) for i in result.issues],
             email=email,
-            priority=priority(cfg, lead, result.score, result.issues),
-            extra=_extra_with_content(lead, result),
-            recommended_tier=recommend_tier(cfg, lead.get("category"), result.score, result.reachable),
+            priority=(geo_priority(cfg, lead, result) if offer == "geo" else priority(cfg, lead, result.score, result.issues)),
+            extra={**_extra_with_content(lead, result), **({"offer": "geo"} if offer else {})},
+            recommended_tier=("geo" if offer else recommend_tier(cfg, lead.get("category"), result.score, result.reachable)),
             status=status,
         )
         stats[status] += 1

@@ -1,0 +1,10 @@
+Re: {{ original_subject }}
+---
+Hi,
+
+I don't want to bother you, so this will be my last message.
+
+If {{ lead.name }}'s visibility on Google and in AI assistants becomes a priority, just reply to this email — your report stays available: {{ audit_url }}
+
+All the best,
+{% include "emails/en/_signature.txt" %}

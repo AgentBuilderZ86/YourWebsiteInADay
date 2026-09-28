@@ -1,0 +1,24 @@
+{{ lead.name }}: your visibility on Google and in AI assistants ({{ geo_score }}/100)
+---
+Hi,
+
+I came across {{ lead.name }}'s website ({{ host }}) while looking for {{ a_cat }} in {{ city }}. It does the job — but I checked how well Google and AI assistants (ChatGPT, Perplexity, Gemini) can understand it: it scores {{ geo_score }}/100 on our SEO & GEO criteria.
+
+More and more customers now ask an AI directly "what's the best {{ cat }} in {{ city }}?". AI assistants cite businesses whose website is clear, structured and verifiable. On yours, I noticed in particular:
+
+{% for f in geo_top %}
+  • {{ f.problem }}
+{% endfor %}
+
+The full report is online, free:
+{{ audit_url }}
+
+To go further, our {{ geo_offer.label }} ({{ geo_offer.price }}, delivered in {{ geo_offer.delivery }}):
+{% for x in geo_offer.features %}
+  – {{ x }}
+{% endfor %}
+
+Just reply "YES" and I'll start it. You only pay when the report is delivered.
+
+Best regards,
+{% include "emails/en/_signature.txt" %}

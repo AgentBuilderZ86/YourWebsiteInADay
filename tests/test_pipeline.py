@@ -1,5 +1,6 @@
 from datetime import date, datetime, timedelta, timezone
 
+from pathlib import Path
 import pytest
 
 from ywiad import pipeline
@@ -161,6 +162,7 @@ def _fake_auditor(url, **_):
 
 
 def test_full_pipeline_queue_mode(cfg):
+    cfg["audit"]["geo_offer"] = False  # offre GEO testée à part
     db = DB(":memory:")
     created = pipeline.ingest(db, [
         {"source": "t", "source_id": "1", "name": "Boutique Bad", "category": "clothes", "market": "FR",
@@ -450,3 +452,14 @@ def test_geo_checks_detect_structured_data_and_faq():
     assert codes[0] == "schema_faq" or "schema_faq" in codes
     assert 0 < geo_score(r.geo) < 100
     assert [f["code"] for f in geo_findings(None, "fr", has_site=False)][0] == "no_site"
+
+
+def test_good_site_with_weak_geo_gets_geo_offer(cfg):
+    from ywiad.db import DB
+    db = DB(str(Path(cfg["paths"]["reports"]).parent / "geo.sqlite"))
+    db.upsert_lead({"source": "t", "source_id": "g1", "name": "Bon Resto", "category": "restaurant", "market": "FR",
+                    "website": "https://bonresto.fr", "email": "contact@bonresto.fr", "city": "Lyon", "extra": {}})
+    stats = pipeline.step_audit(db, cfg, auditor=lambda url, **k: analyze_html(
+        GOOD_SITE, final_url=url, load_seconds=0.8, page_bytes=50_000, https_ok=True, ssl_valid=True))
+    lead = db.leads("qualified")[0]
+    assert stats["qualified"] == 1 and lead["extra"]["offer"] == "geo" and lead["recommended_tier"] == "geo"

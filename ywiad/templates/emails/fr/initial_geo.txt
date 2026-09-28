@@ -1,0 +1,24 @@
+{{ lead.name }} : votre visibilité sur Google et dans les IA ({{ geo_score }}/100)
+---
+Bonjour,
+
+J'ai découvert le site {{ de_name }} ({{ host }}) en cherchant {{ un_cat }} à {{ city }}. Il fait le travail — mais j'ai vérifié comment Google et les assistants IA (ChatGPT, Perplexity, Gemini) peuvent le comprendre : il obtient {{ geo_score }}/100 sur nos critères SEO & GEO.
+
+Or de plus en plus de clients demandent directement à une IA « quel est le meilleur {{ cat }} à {{ city }} ? ». Les IA citent les commerces dont le site est clair, structuré et vérifiable. Sur le vôtre, j'ai relevé notamment :
+
+{% for f in geo_top %}
+  • {{ f.problem }}
+{% endfor %}
+
+Le rapport complet est en ligne, gratuitement :
+{{ audit_url }}
+
+Pour aller plus loin, notre {{ geo_offer.label }} ({{ geo_offer.price }}, livré en {{ geo_offer.delivery }}) :
+{% for x in geo_offer.features %}
+  – {{ x }}
+{% endfor %}
+
+Répondez simplement « OUI » et je le lance. Vous ne réglez qu'à la livraison du rapport.
+
+Bien cordialement,
+{% include "emails/fr/_signature.txt" %}

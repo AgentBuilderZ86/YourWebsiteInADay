@@ -1,0 +1,11 @@
+Re: {{ original_subject }}
+---
+Bonjour,
+
+Une précision : l'audit complet compare aussi {{ lead.name }} à 3 concurrents à {{ city }}, et vérifie que vos coordonnées sont identiques sur Google, Facebook, TripAdvisor et les annuaires — c'est ce que les IA recoupent avant de recommander un commerce.
+
+Vous repartez avec un plan d'action priorisé, que vous pouvez confier à votre prestataire actuel.
+
+Un créneau de 10 minutes cette semaine ?
+
+{% include "emails/fr/_signature.txt" %}

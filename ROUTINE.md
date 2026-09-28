@@ -67,6 +67,10 @@ scripts/state.sh pull
   - Demande de modification de la maquette : la faire (textes, couleurs, photos fournies), republier
     `ywiad site` + déploiement, renvoyer le lien dans le fil le jour même.
   - Toujours : réponse courte, dans sa langue, un seul appel à l'action, signature AZ + WhatsApp.
+  - Offre « Audit GEO » seule (leads `extra.offer = geo` : site correct, note GEO < 50) : sur un « OUI »,
+    confirmer l'Audit GEO complet au prix du marché (`markets.<code>.prices.geo`, livré en 48 h, réglé à la
+    livraison), demander l'accès à la fiche Google si possible, puis « [CLOSING] <commerce> — Audit GEO —
+    <prix> » à AZ. Si le prospect veut aussi refaire son site : proposer la formule conseillée.
   - Argument GEO : chaque prospect a son rapport « Audit SEO & GEO » (`<maquette>/audit/`). Le citer
     quand il hésite : ses recommandations sont incluses dans la refonte (Basique : bases GEO ;
     Standard : audit complet mis en œuvre ; Premium : + suivi mensuel). Ne citer que les points du rapport.

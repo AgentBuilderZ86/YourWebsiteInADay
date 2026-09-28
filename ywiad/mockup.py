@@ -15,7 +15,7 @@ from typing import Any
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from .pricing import enabled_markets, market, pricing_table
+from .pricing import format_price, enabled_markets, market, pricing_table
 
 log = logging.getLogger("ywiad")
 
@@ -317,6 +317,7 @@ AUDIT_STRINGS = {
         "fixed_by_redesign": "corrigé par la refonte (site rapide, mobile, sécurisé).",
         "good_title": "Ce qui est déjà en place",
         "cta": "Toutes ces recommandations sont mises en place dans le cadre de la refonte de votre site. Votre maquette est déjà prête : répondez « OUI » et je la mets en ligne à votre nom. Vous ne réglez qu'une fois le site en ligne et validé.",
+        "cta_geo": "Ce rapport liste ce que nous avons constaté. L'{label} ({price}, livré en {delivery}) va plus loin : pages clés, fiche Google, comparaison avec 3 concurrents locaux, cohérence de vos coordonnées sur le web et plan d'action priorisé, présenté en 30 min. Répondez « OUI » à mon email : vous ne réglez qu'à la livraison.",
         "see_mockup": "Voir ma maquette", "email": "Répondre par email",
         "footer": "Audit réalisé automatiquement à partir de votre page publique ; aucune donnée personnelle collectée.",
         "passed": {"schema_local": "Données structurées de commerce local", "schema_faq": "FAQ structurée", "nap": "Nom, adresse et téléphone lisibles",
@@ -334,6 +335,7 @@ AUDIT_STRINGS = {
         "fixed_by_redesign": "fixed by the redesign (fast, mobile, secure site).",
         "good_title": "Already in place",
         "cta": "All these recommendations are implemented as part of your website redesign. Your mock-up is ready: reply \"YES\" and I'll put it live under your name. You only pay once the site is live and approved.",
+        "cta_geo": "This report lists what we found. The {label} ({price}, delivered in {delivery}) goes further: key pages, Google profile, benchmark against 3 local competitors, consistency of your details across the web and a prioritised action plan, walked through in 30 minutes. Reply \"YES\" to my email: you only pay on delivery.",
         "see_mockup": "See my mock-up", "email": "Reply by email",
         "footer": "Audit run automatically on your public page; no personal data collected.",
         "passed": {"schema_local": "Local-business structured data", "schema_faq": "Structured FAQ", "nap": "Readable name, address and phone",
@@ -364,6 +366,11 @@ def render_audit(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | No
     passed = [t["passed"][g["code"]] for g in geo or [] if g.get("ok") and g["code"] in t["passed"]]
     score = geo_score(geo) if has_site else 0
     color = "#c92a2a" if (score or 0) < 40 else "#b7791f" if score < 70 else "#2f7d4f"
+    if extra.get("offer") == "geo":
+        g, m = cfg["pricing"]["geo_audit"], market(cfg, lead.get("market"))
+        t["cta"] = t["cta_geo"].format(label=g["label"][lang], delivery=g["delivery"][lang],
+                                       price=format_price(m["prices"]["geo"], m))
+        mockup_url = None
     return _env.get_template("mockups/audit.html").render(
         lang=lang, t=t, lead=lead, business=cfg["business"], today=today, geo_score=score, score_color=color,
         findings=findings, site_issues=site_issues[:4], passed=passed, mockup_url=mockup_url)

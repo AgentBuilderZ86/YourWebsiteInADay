@@ -1,0 +1,11 @@
+Re: {{ original_subject }}
+---
+Hi,
+
+One more detail: the full audit also benchmarks {{ lead.name }} against 3 competitors in {{ city }}, and checks your details are identical on Google, Facebook, TripAdvisor and directories — that's what AI assistants cross-check before recommending a business.
+
+You get a prioritised action plan you can hand to your current web provider.
+
+Do you have 10 minutes this week?
+
+{% include "emails/en/_signature.txt" %}

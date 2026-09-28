@@ -1,0 +1,10 @@
+Re: {{ original_subject }}
+---
+Bonjour,
+
+Je ne veux pas vous importuner : ce sera mon dernier message.
+
+Si la visibilité {{ de_name }} dans Google et les IA devient une priorité, il suffit de répondre à cet email — votre rapport reste disponible : {{ audit_url }}
+
+Belle continuation,
+{% include "emails/fr/_signature.txt" %}

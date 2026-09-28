@@ -13,7 +13,7 @@ from markupsafe import Markup, escape
 
 from .discover import social_platform
 from .audit import geo_findings, geo_score, issue_label
-from .pricing import market, pricing_table
+from .pricing import format_price, market, pricing_table
 
 _env = Environment(loader=PackageLoader("ywiad", "templates"), autoescape=False,
                    trim_blocks=True, lstrip_blocks=True, keep_trailing_newline=True)
@@ -143,6 +143,15 @@ def de_name(name: str) -> str:
     return f"d'{name}" if first and first in "aeiouyâàéèêîïôûœ" else f"de {name}"
 
 
+def _geo_offer(cfg: dict[str, Any], lead: dict[str, Any], lang: str) -> dict[str, Any] | None:
+    g = cfg["pricing"].get("geo_audit")
+    m = market(cfg, lead.get("market"))
+    if not g or "geo" not in m.get("prices", {}):
+        return None
+    return {"label": g["label"][lang], "delivery": g["delivery"][lang], "features": g["features"][lang],
+            "price": format_price(m["prices"]["geo"], m)}
+
+
 def _geo_line(lead: dict[str, Any], s: dict[str, Any], has_site: bool, site_down: bool, lang: str) -> str:
     """Phrase d'accroche de l'audit SEO & GEO (chiffres issus de l'audit réel)."""
     geo = (lead.get("extra") or {}).get("geo")
@@ -175,6 +184,11 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
     return {
         "intro": intro,
         "audit_url": (mockup_url + "audit/") if mockup_url else None,
+        "offer": (lead.get("extra") or {}).get("offer"),
+        "geo_score": geo_score((lead.get("extra") or {}).get("geo")),
+        "geo_top": geo_findings((lead.get("extra") or {}).get("geo"), lang)[:3],
+        "geo_offer": _geo_offer(cfg, lead, lang),
+        "cat": fmt["cat"], "un_cat": fmt["un_cat"], "a_cat": fmt["a_cat"], "city": fmt["city"],
         "geo_line": _geo_line(lead, s, has_site, site_down, lang),
         "platform": platform,
         "no_site_sentence": no_site_sentence,
@@ -202,7 +216,8 @@ def render_email(kind: str, lead: dict[str, Any], cfg: dict[str, Any], *,
     ctx = _context(lead, cfg, mockup_url)
     ctx["original_subject"] = original_subject
     lang = ctx["market"].get("language", "fr")
-    raw = _env.get_template(f"emails/{lang}/{kind}.txt").render(**ctx)
+    suffix = "_geo" if ctx.get("offer") == "geo" else ""
+    raw = _env.get_template(f"emails/{lang}/{kind}{suffix}.txt").render(**ctx)
     # trim_blocks peut coller le séparateur à la ligne du sujet : on découpe sur "---\n"
     subject, _, body = raw.partition("---\n")
     return subject.strip(), body.strip() + "\n"
@@ -248,6 +263,8 @@ def render_email_html(kind: str, lead: dict[str, Any], cfg: dict[str, Any], *, m
     subject, text = render_email(kind, lead, cfg, mockup_url=mockup_url, original_subject=original_subject)
     ctx.update(c=COLORS, f=FONTS, s=s, subject=subject, preview_url=preview_url if mockup_url else None,
                phone=_phone(lead, cfg, lang, ctx["category_label"]))
+    if ctx.get("offer") == "geo":
+        return _render_paragraphs_html("emails/html/geo.html", ctx, cfg, text, kind)
     if kind == "initial":
         score = ctx["score"] or 0
         ctx["score"] = score
@@ -260,15 +277,26 @@ def render_email_html(kind: str, lead: dict[str, Any], cfg: dict[str, Any], *, m
         ctx["no_site_text"] = s["social_text"].format(platform=ctx["platform"]) if ctx["platform"] else s["no_site_text"]
         ctx["preheader"] = (s["preheader_site"].format(score=score) if ctx["has_site"] else s["preheader_none"])
         return harden_backgrounds(_html_env.get_template("emails/html/initial.html").render(**ctx))
-    # Relances : le texte (volontairement personnel) mis en page, sans la signature texte
+    return _render_paragraphs_html("emails/html/followup.html", ctx, cfg, text, kind)
+
+
+def _render_paragraphs_html(template: str, ctx: dict[str, Any], cfg: dict[str, Any], text: str, kind: str) -> str:
+    """Le texte (volontairement personnel) mis en page, sans la signature texte."""
     sender = cfg["business"]["sender_name"].strip()
     lines = text.split("\n")
     if sender in (l.strip() for l in lines):
         lines = lines[:[l.strip() for l in lines].index(sender)]
-    paragraphs = [" ".join(p.split("\n")).strip() for p in "\n".join(lines).split("\n\n") if p.strip()]
-    ctx.update(paragraphs=[_linkify(p) for p in paragraphs], show_mockup=kind != "followup_3",
+    blocks = [b for b in "\n".join(lines).split("\n\n") if b.strip()]
+    paragraphs = [" ".join(b.split("\n")).strip() for b in blocks]
+
+    def fmt(block: str) -> Markup:
+        rows = [r.strip() for r in block.split("\n") if r.strip()]
+        if any(r.startswith(("•", "–")) for r in rows):  # listes : une ligne par puce
+            return Markup("<br>").join(_linkify(r) for r in rows)
+        return _linkify(" ".join(rows))
+    ctx.update(paragraphs=[fmt(b) for b in blocks], show_mockup=kind != "followup_3",
                preheader=paragraphs[1] if len(paragraphs) > 1 else "")
-    return harden_backgrounds(_html_env.get_template("emails/html/followup.html").render(**ctx))
+    return harden_backgrounds(_html_env.get_template(template).render(**ctx))
 
 
 def render_whatsapp(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None = None) -> str:

@@ -1,0 +1,11 @@
+Re: {{ original_subject }}
+---
+Bonjour,
+
+Je reviens vers vous au sujet de la visibilité {{ de_name }} sur Google et dans les assistants IA. Le point le plus important : {{ geo_top[0].problem|lower if geo_top else "les données structurées" }}.
+
+Votre rapport gratuit est toujours en ligne : {{ audit_url }}
+
+Un simple « OUI » en réponse et je lance l'{{ geo_offer.label }} ({{ geo_offer.price }}, {{ geo_offer.delivery }}) — vous ne réglez qu'à la livraison.
+
+{% include "emails/fr/_signature.txt" %}

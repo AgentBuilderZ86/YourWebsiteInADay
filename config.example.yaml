@@ -25,7 +25,7 @@ markets:
     currency: "€"
     timezone: "Europe/Paris"
     cities: ["Paris", "Lyon", "Marseille", "Bordeaux", "Nantes", "Lille", "Toulouse", "Nice", "Montpellier", "Strasbourg"]
-    prices: { basique: 490, standard: 1290, premium: 2900 }
+    prices: { geo: 99, basique: 490, standard: 1290, premium: 2900 }
     monthly: { basique: 29, standard: 49, premium: 99 }
     legal: >-
       Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
@@ -38,7 +38,7 @@ markets:
     currency: "€"
     timezone: "Europe/Brussels"
     cities: ["Bruxelles", "Liège", "Namur", "Charleroi", "Mons"]
-    prices: { basique: 490, standard: 1290, premium: 2900 }
+    prices: { geo: 99, basique: 490, standard: 1290, premium: 2900 }
     monthly: { basique: 29, standard: 49, premium: 99 }
     legal: >-
       Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
@@ -51,7 +51,7 @@ markets:
     currency: "MAD"
     timezone: "Africa/Casablanca"
     cities: ["Casablanca", "Rabat", "Marrakech", "Tanger", "Agadir", "Fès"]
-    prices: { basique: 2990, standard: 6990, premium: 14990 }
+    prices: { geo: 490, basique: 2990, standard: 6990, premium: 14990 }
     monthly: { basique: 149, standard: 290, premium: 590 }
     legal: >-
       Vous recevez ce message car les coordonnées de votre activité sont publiques (loi 09-08).
@@ -65,7 +65,7 @@ markets:
     timezone: "America/Toronto"
     requires_postal_address: true
     cities: ["Toronto", "Vancouver", "Calgary", "Ottawa"]
-    prices: { basique: 790, standard: 1990, premium: 4500 }
+    prices: { geo: 149, basique: 790, standard: 1990, premium: 4500 }
     monthly: { basique: 39, standard: 69, premium: 149 }
     legal: >-
       You are receiving this one-off business message because your business email is publicly listed
@@ -80,7 +80,7 @@ markets:
     timezone: "America/Montreal"
     requires_postal_address: true
     cities: ["Montréal", "Québec", "Laval", "Gatineau"]
-    prices: { basique: 790, standard: 1990, premium: 4500 }
+    prices: { geo: 149, basique: 790, standard: 1990, premium: 4500 }
     monthly: { basique: 39, standard: 69, premium: 149 }
     legal: >-
       Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
@@ -95,7 +95,7 @@ markets:
     timezone: "America/New_York"
     requires_postal_address: true
     cities: ["Miami", "Austin", "Atlanta", "Charlotte", "Tampa", "Nashville", "Denver", "Orlando"]
-    prices: { basique: 590, standard: 1490, premium: 3490 }
+    prices: { geo: 99, basique: 590, standard: 1490, premium: 3490 }
     monthly: { basique: 29, standard: 59, premium: 129 }
     legal: >-
       This is a commercial message. You are receiving it because your business email is publicly
@@ -107,7 +107,7 @@ markets:
     currency: "AUD"
     timezone: "Australia/Sydney"
     cities: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast"]
-    prices: { basique: 790, standard: 1990, premium: 4900 }
+    prices: { geo: 149, basique: 790, standard: 1990, premium: 4900 }
     monthly: { basique: 39, standard: 79, premium: 159 }
     legal: >-
       You are receiving this message because your business email is conspicuously published and our
@@ -119,7 +119,7 @@ markets:
     currency: "AED"
     timezone: "Asia/Dubai"
     cities: ["Dubai", "Abu Dhabi", "Sharjah"]
-    prices: { basique: 1990, standard: 4990, premium: 11900 }
+    prices: { geo: 390, basique: 1990, standard: 4990, premium: 11900 }
     monthly: { basique: 99, standard: 199, premium: 449 }
     legal: >-
       You are receiving this message because your business contact details are publicly listed.
@@ -134,7 +134,7 @@ markets:
     currency_prefix: true
     timezone: "Europe/London"
     cities: ["London", "Manchester", "Birmingham", "Leeds", "Bristol"]
-    prices: { basique: 450, standard: 1190, premium: 2790 }
+    prices: { geo: 89, basique: 450, standard: 1190, premium: 2790 }
     monthly: { basique: 25, standard: 49, premium: 99 }
     legal: 'Reply "STOP" to unsubscribe.'
 
@@ -184,9 +184,20 @@ prospecting:
 audit:
   timeout_seconds: 15
   bad_site_threshold: 60
+  # Site correct (note ≥ seuil) mais peu lisible par Google et les IA : offre « Audit GEO » seule
+  geo_offer: true
+  geo_threshold: 50
   use_pagespeed: false
 
 pricing:
+  # Offre seule « Audit GEO » (commerces au site correct mais peu visible pour Google et les IA) :
+  # prix par marché dans markets.<code>.prices.geo
+  geo_audit:
+    label: { fr: "Audit GEO complet", en: "Full GEO audit" }
+    delivery: { fr: "48 h", en: "48 hours" }
+    features:
+      fr: ["Analyse de vos pages clés et de votre fiche Google", "Comparaison avec 3 concurrents locaux", "Cohérence de vos coordonnées sur Google, Facebook, TripAdvisor et annuaires", "Plan d'action priorisé, prêt à confier à votre prestataire", "Échange de 30 min pour le présenter"]
+      en: ["Review of your key pages and Google Business Profile", "Benchmark against 3 local competitors", "Consistency of your details across Google, Facebook, TripAdvisor and directories", "Prioritised action plan, ready to hand to your web provider", "30-minute call to walk you through it"]
   tiers:
     basique:
       label: { fr: "Basique — Site vitrine express", en: "Starter — Express one-page site" }
