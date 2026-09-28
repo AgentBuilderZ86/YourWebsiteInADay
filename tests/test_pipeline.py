@@ -358,3 +358,16 @@ def test_mockups_vary_between_businesses(cfg):
     specs = [mockup_spec({**base, "name": n}, cfg) for n in ("Riad A", "Riad Bahia", "Dar Chams", "Hotel Atlas", "Riad Zitoun")]
     assert len({(s["layout"], s["accent"], s["tagline"]) for s in specs}) == len(specs)
     assert any("Marrakech" in s["tagline"] for s in specs)
+
+
+def test_www_missing_but_domain_alive_is_not_expired(monkeypatch):
+    import requests
+    from ywiad import audit
+    def boom(*a, **k):
+        raise requests.ConnectionError("dns")
+    monkeypatch.setattr(audit, "_fetch", boom)
+    monkeypatch.setattr(audit, "domain_exists", lambda d: d == "resto.be")
+    r = audit.audit_url("https://www.resto.be")
+    assert r.issues[0].code == "down"  # le domaine vit (messagerie), seul le site manque
+    monkeypatch.setattr(audit, "domain_exists", lambda d: False)
+    assert audit.audit_url("https://www.resto.be").issues[0].code == "expired"

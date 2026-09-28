@@ -424,8 +424,14 @@ def audit_url(url: str | None, *, timeout: int = 15, use_pagespeed: bool = False
             start = time.monotonic()
             resp = _fetch(re.sub(r"^https://", "http://", url), timeout)
         except requests.RequestException as exc:
-            if domain_exists(urlparse(url).netloc) is False:
-                return AuditResult(url, 0, [Issue("expired", 100, {"host": urlparse(url).netloc})], reachable=False)
+            host = urlparse(url).netloc.lower()
+            bare = host.removeprefix("www.")
+            if domain_exists(bare) is False:
+                # Le nom de domaine lui-même n'existe plus : expiré
+                return AuditResult(url, 0, [Issue("expired", 100, {"host": bare})], reachable=False)
+            if domain_exists(host) is False:
+                # Le domaine existe (souvent avec sa messagerie) mais aucun site n'y est hébergé
+                return AuditResult(url, 0, [Issue("down", 100, {"status": "DNS"})], reachable=False)
             return AuditResult(url, 100, reachable=False, verified=False, note=f"injoignable depuis notre réseau ({exc.__class__.__name__})")
     elapsed = time.monotonic() - start
     if resp.status_code >= 400:
