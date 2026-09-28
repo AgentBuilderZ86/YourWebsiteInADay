@@ -41,7 +41,8 @@ def agency_benchmark(m: dict[str, Any], key: str, amount: int | float | None = N
     if amount:
         pct = round((1 - amount / ((low + high) / 2)) * 100)
         saving = pct if pct >= 15 else None
-    return {"range": rng, "low": low, "high": high, "delay": b[2] if len(b) > 2 else None, "saving": saving}
+    return {"range": rng, "low": low, "high": high, "delay": b[2] if len(b) > 2 else None, "saving": saving,
+            "note": b[3] if len(b) > 3 else None}
 
 
 def recommend_tier(cfg: dict[str, Any], category: str | None, score: int, has_site: bool) -> str:
@@ -101,8 +102,8 @@ def can_email_market(cfg: dict[str, Any], market_code: str | None) -> tuple[bool
 
 
 def geo_offers(cfg: dict[str, Any], market_code: str | None, lang: str | None = None) -> list[dict[str, Any]]:
-    """Offres GEO du marché : « Audit GEO complet » par défaut (prix `geo`), ou la liste
-    `geo_offers` du marché (ex. Maroc : correctifs prioritaires + optimisation complète)."""
+    """Offres GEO du marché (`geo_offers` : correctifs prioritaires + optimisation complète), ou à
+    défaut « Audit GEO complet » (prix `geo`). L'audit de base reste offert à chaque prospect."""
     m = market(cfg, market_code)
     lang = lang or m.get("language", "fr")
     keys = m.get("geo_offers") or (["geo_audit"] if "geo" in m.get("prices", {}) else [])
@@ -114,5 +115,6 @@ def geo_offers(cfg: dict[str, Any], market_code: str | None, lang: str | None = 
             continue
         out.append({"key": key, "label": spec["label"][lang], "delivery": spec["delivery"][lang],
                     "features": spec["features"][lang], "price": format_price(amount, m), "amount": amount,
-                    "agency": agency_benchmark(m, "audit", amount)})
+                    "agency": agency_benchmark(m, key, amount) or agency_benchmark(m, "audit", amount),
+                    "recommended": key == "geo_full"})
     return out

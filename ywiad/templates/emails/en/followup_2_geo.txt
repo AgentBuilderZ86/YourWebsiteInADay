@@ -2,9 +2,11 @@ Re: {{ original_subject }}
 ---
 Hi,
 
-One more detail: the full audit also benchmarks {{ lead.name }} against 3 competitors in {{ city }}, and checks your details are identical on Google, Facebook, TripAdvisor and directories — that's what AI assistants cross-check before recommending a business.
+{% if geo_offers|length > 1 %}One more detail: our {{ geo_offers[-1].label }} ({{ geo_offers[-1].price }}) also benchmarks {{ lead.name }} against 3 competitors in {{ city }} and aligns your details on Google, Facebook, TripAdvisor and directories — that's what AI assistants cross-check before recommending a business.{% if geo_offers[-1].agency %} Agencies charge {{ geo_offers[-1].agency.range }}{% if geo_offers[-1].agency.note %} {{ geo_offers[-1].agency.note }}{% endif %}.{% endif %}
 
-You get a prioritised action plan you can hand to your current web provider.
+Your score is re-measured after the work, so you see the gain with proof. And if you rebuild your website with us afterwards, the amount is deducted.{% else %}One more detail: the full audit also benchmarks {{ lead.name }} against 3 competitors in {{ city }}, and checks your details are identical on Google, Facebook, TripAdvisor and directories — that's what AI assistants cross-check before recommending a business.
+
+You get a prioritised action plan you can hand to your current web provider.{% endif %}
 
 Do you have 10 minutes this week?
 

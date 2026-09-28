@@ -320,7 +320,9 @@ AUDIT_STRINGS = {
         "cta_geo": "Ce rapport liste ce que nous avons constaté. L'{label} ({price}, livré en {delivery}) va plus loin : pages clés, fiche Google, comparaison avec 3 concurrents locaux, cohérence de vos coordonnées sur le web et plan d'action priorisé, présenté en 30 min. Répondez « OUI » à mon email : vous ne réglez qu'à la livraison.",
         "compare": "En agence, un tel audit se facture {audit} à lui seul. Ici, il vous est offert et ses recommandations sont incluses dans la refonte.",
         "compare_tier": "Formule conseillée pour vous : {label}, {price}, livrée en {delivery} — contre {range} en agence{delay}.",
-        "credit": "Si vous refaites ensuite votre site avec nous, le prix de l'audit est intégralement déduit (commande sous {days} jours).",
+        "credit": "Si vous refaites ensuite votre site avec nous, le montant est intégralement déduit (commande sous {days} jours).",
+        "compare_geo": "Ce rapport vous est offert ; en agence, un audit de ce type se facture {audit}.",
+        "offer_agency": "{label} : {price} — en agence, {range} {note}.",
         "cta_geo_multi": "Nous corrigeons ces points directement sur votre site : {options}. Votre score (aujourd'hui {score}/100) est remesuré après l'intervention, preuve à l'appui. Répondez « 1 » ou « 2 » à mon email : vous ne réglez qu'une fois le travail livré.",
         "see_mockup": "Voir ma maquette", "email": "Répondre par email",
         "footer": "Audit réalisé automatiquement à partir de votre page publique ; aucune donnée personnelle collectée.",
@@ -342,7 +344,9 @@ AUDIT_STRINGS = {
         "cta_geo": "This report lists what we found. The {label} ({price}, delivered in {delivery}) goes further: key pages, Google profile, benchmark against 3 local competitors, consistency of your details across the web and a prioritised action plan, walked through in 30 minutes. Reply \"YES\" to my email: you only pay on delivery.",
         "compare": "Agencies bill {audit} for an audit like this on its own. Here it's free, and its recommendations are included in the redesign.",
         "compare_tier": "Recommended for you: {label}, {price}, live in {delivery} — versus {range} at an agency{delay}.",
-        "credit": "If you then rebuild your website with us, the audit fee is fully deducted (order within {days} days).",
+        "credit": "If you then rebuild your website with us, the amount is fully deducted (order within {days} days).",
+        "compare_geo": "This report is free; agencies bill {audit} for an audit like this.",
+        "offer_agency": "{label}: {price} — agency price {range} {note}.",
         "cta_geo_multi": "We fix these points directly on your website: {options}. Your score (currently {score}/100) is re-measured after the work, with proof. Reply \"1\" or \"2\" to my email: you only pay once the work is delivered.",
         "see_mockup": "See my mock-up", "email": "Reply by email",
         "footer": "Audit run automatically on your public page; no personal data collected.",
@@ -387,7 +391,13 @@ def render_audit(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | No
                                                   delay=f" ({a['delay']})" if a.get("delay") else ""))
     if extra.get("offer") == "geo":
         offers = geo_offers(cfg, lead.get("market"), lang)
-        if len(offers) == 1 and cfg["pricing"].get("geo_credit_days"):
+        if audit_value:
+            notes.append(t["compare_geo"].format(audit=audit_value))
+        for o in offers:
+            if o.get("agency") and o["agency"].get("note"):
+                notes.append(t["offer_agency"].format(label=o["label"], price=o["price"], range=o["agency"]["range"],
+                                                      note=o["agency"]["note"]))
+        if offers and cfg["pricing"].get("geo_credit_days"):
             notes.append(t["credit"].format(days=cfg["pricing"]["geo_credit_days"]))
         if len(offers) > 1:
             t["cta"] = t["cta_geo_multi"].format(score=score, options=" ; ".join(

@@ -72,15 +72,15 @@ scripts/state.sh pull
   - Demande de modification de la maquette : la faire (textes, couleurs, photos fournies), republier
     `ywiad site` + déploiement, renvoyer le lien dans le fil le jour même.
   - Toujours : réponse courte, dans sa langue, un seul appel à l'action, signature AZ + WhatsApp.
-  - Offre « Audit GEO » seule (leads `extra.offer = geo` : site correct, note GEO < 50) : sur un « OUI »,
-    confirmer l'Audit GEO complet au prix du marché (`markets.<code>.prices.geo`, livré en 48 h, réglé à la
-    livraison), demander l'accès à la fiche Google si possible, puis « [CLOSING] <commerce> — Audit GEO —
-    <prix> » à AZ. Si le prospect veut aussi refaire son site : proposer la formule conseillée, le prix de
-    l'audit étant intégralement déduit si la refonte est commandée sous 30 jours (`pricing.geo_credit_days`).
-  - Maroc (`geo_offers`) : « 1 » = Correctifs GEO prioritaires (990 MAD, 72 h), « 2 » = Optimisation GEO
-    complète (1 490 MAD, 7 jours). Sur réponse : confirmer l'offre, demander l'accès au site (CMS/FTP) ou
-    le contact du prestataire, noter le score de départ (`ywiad audit-url <site>`), puis « [CLOSING] ».
+  - Offre GEO (leads `extra.offer = geo` : site correct, note GEO < 50). L'audit est offert (rapport en
+    ligne) ; on vend la mise en œuvre, en deux paliers (`markets.<code>.geo_offers`) : « 1 » = Correctifs GEO
+    prioritaires (72 h), « 2 » = Optimisation GEO complète (7 jours, conseillée). Prix : FR/BE 490 / 990 € ;
+    MA 1 490 / 2 990 MAD ; AU 490 / 990 AUD ; AE 1 290 / 2 490 AED. Sur réponse : confirmer l'offre, demander
+    l'accès au site (CMS/FTP) ou le contact du prestataire, et l'accès à la fiche Google si possible, noter le
+    score de départ (`ywiad audit-url <site>`), puis « [CLOSING] <commerce> — <offre> — <prix> » à AZ.
     Après intervention : remesurer et envoyer le score avant/après au client (preuve à l'appui).
+    Argument prix : l'audit seul se facture 1 500 à 3 000 € en agence (MA : 1 500 à 4 000 MAD ; un mois de
+    SEO 3 000 à 8 000 MAD), sans mise en œuvre. Le montant est déduit d'une refonte commandée sous 30 jours.
   - Argument GEO : chaque prospect a son rapport « Audit SEO & GEO » (`<maquette>/audit/`). Le citer
     quand il hésite : ses recommandations sont incluses dans la refonte (Basique : bases GEO ;
     Standard : audit complet mis en œuvre ; Premium : + suivi mensuel). Ne citer que les points du rapport.

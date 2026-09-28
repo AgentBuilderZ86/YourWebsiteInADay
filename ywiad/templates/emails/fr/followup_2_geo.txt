@@ -2,9 +2,11 @@ Re: {{ original_subject }}
 ---
 Bonjour,
 
-Une précision : l'audit complet compare aussi {{ lead.name }} à 3 concurrents à {{ city }}, et vérifie que vos coordonnées sont identiques sur Google, Facebook, TripAdvisor et les annuaires — c'est ce que les IA recoupent avant de recommander un commerce.
+{% if geo_offers|length > 1 %}Une précision : l'{{ geo_offers[-1].label }} ({{ geo_offers[-1].price }}) compare aussi {{ lead.name }} à 3 concurrents à {{ city }} et harmonise vos coordonnées sur Google, Facebook, TripAdvisor et les annuaires — c'est ce que les IA recoupent avant de recommander un commerce.{% if geo_offers[-1].agency %} En agence, comptez {{ geo_offers[-1].agency.range }}{% if geo_offers[-1].agency.note %} {{ geo_offers[-1].agency.note }}{% endif %}.{% endif %}
 
-Vous repartez avec un plan d'action priorisé, que vous pouvez confier à votre prestataire actuel.
+Votre score est remesuré après intervention : vous voyez le gain, preuve à l'appui. Et si vous refaites votre site avec nous ensuite, le montant est déduit.{% else %}Une précision : l'audit complet compare aussi {{ lead.name }} à 3 concurrents à {{ city }}, et vérifie que vos coordonnées sont identiques sur Google, Facebook, TripAdvisor et les annuaires — c'est ce que les IA recoupent avant de recommander un commerce.
+
+Vous repartez avec un plan d'action priorisé, que vous pouvez confier à votre prestataire actuel.{% endif %}
 
 Un créneau de 10 minutes cette semaine ?
 

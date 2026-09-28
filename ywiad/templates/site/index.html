@@ -92,8 +92,8 @@
     </div>
     {% for o in m.geo %}
     <div class="geo">
-      <p><b>{{ o.label }}</b> — {{ o.price }} · {{ o.delivery }}{% if o.agency %} <span class="agency"><s>{{ 'Audit SEO en agence' if m.fr else 'Agency SEO audit' }} : {{ o.agency.range }}</s></span>{% endif %}</p>
-      <p class="meta">{{ o.features[:3]|join(' · ') }}{% if o.key == 'geo_audit' %}{{ ' — déductible à 100 % d\'une refonte commandée sous 30 jours' if m.fr else ' — 100% credited against a redesign ordered within 30 days' }}{% endif %}</p>
+      <p><b>{{ o.label }}</b> — {{ o.price }} · {{ o.delivery }}{% if o.agency %} <span class="agency"><s>{{ 'En agence' if m.fr else 'Agency' }} : {{ o.agency.range }}{% if o.agency.note %} {{ o.agency.note }}{% endif %}</s>{% if o.agency.saving %}<span class="save">≈ −{{ o.agency.saving }} %</span>{% endif %}</span>{% endif %}</p>
+      <p class="meta">{{ o.features[:3]|join(' · ') }}{{ ' — déductible à 100 % d\'une refonte commandée sous 30 jours' if m.fr else ' — 100% credited against a redesign ordered within 30 days' }}</p>
     </div>
     {% endfor %}
   </div>
@@ -104,7 +104,7 @@
     <tr><th></th><th>Agence web classique / Typical agency</th><th>{{ business.name }}</th></tr>
     <tr><td>Délai / Time</td><td>2 à 5 semaines (vitrine), 4 à 12 (e-commerce)</td><td>24 h à 7 jours</td></tr>
     <tr><td>Avant de décider / Before you commit</td><td>Devis, réunions, acompte</td><td>Maquette de votre site déjà en ligne, gratuite</td></tr>
-    <tr><td>SEO & GEO (Google + IA)</td><td>Audit facturé 1 500 à 3 000 € en plus</td><td>Audit offert, recommandations mises en place</td></tr>
+    <tr><td>SEO & GEO (Google + IA)</td><td>Audit facturé 1 500 à 3 000 € en plus, mise en œuvre à part</td><td>Audit offert, correctifs dès 490 €, score remesuré</td></tr>
     <tr><td>Paiement / Payment</td><td>Acompte à la commande</td><td>Une fois le site en ligne et validé par vous</td></tr>
   </table>
   <p class="src">Sources (sept. 2026) : fenxi.fr, ipaoo.fr (tarifs agences France), vigeon.fr, lafabriquedunet.fr (audit GEO), mumtaz.ma (Maroc), pulsemarketing.ma, toprank.ma (audit SEO Maroc), wolfiq.com.au (Australie), codingclave.com (Dubaï). Fourchettes indicatives HT ; « ≈ −x % » = écart avec le milieu de la fourchette.</p>

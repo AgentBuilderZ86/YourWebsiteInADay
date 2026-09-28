@@ -25,13 +25,16 @@ markets:
     currency: "€"
     timezone: "Europe/Paris"
     cities: ["Paris", "Lyon", "Marseille", "Bordeaux", "Nantes", "Lille", "Toulouse", "Nice", "Montpellier", "Strasbourg"]
-    prices: { geo: 149, basique: 790, standard: 1990, premium: 4900 }
+    prices: { geo_fix: 490, geo_full: 990, basique: 790, standard: 1990, premium: 4900 }
+    geo_offers: [geo_fix, geo_full]
     monthly: { basique: 39, standard: 69, premium: 149 }
     benchmarks:
       basique: [1000, 6000, "2 à 5 semaines"]
       standard: [2000, 6000, "2 à 5 semaines"]
       premium: [4000, 20000, "4 à 12 semaines"]
       audit: [1500, 3000]
+      geo_fix: [1500, 3000, null, "pour l'audit seul, sans mise en œuvre"]
+      geo_full: [1500, 3000, null, "pour l'audit seul, sans mise en œuvre"]
     legal: >-
       Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
       concerne directement votre activité (art. L34-5 du CPCE). Répondez « STOP » pour ne plus être
@@ -43,13 +46,16 @@ markets:
     currency: "€"
     timezone: "Europe/Brussels"
     cities: ["Bruxelles", "Liège", "Namur", "Charleroi", "Mons"]
-    prices: { geo: 149, basique: 790, standard: 1990, premium: 4900 }
+    prices: { geo_fix: 490, geo_full: 990, basique: 790, standard: 1990, premium: 4900 }
+    geo_offers: [geo_fix, geo_full]
     monthly: { basique: 39, standard: 69, premium: 149 }
     benchmarks:
       basique: [1000, 6000, "2 à 5 semaines"]
       standard: [2000, 6000, "2 à 5 semaines"]
       premium: [4000, 20000, "4 à 12 semaines"]
       audit: [1500, 3000]
+      geo_fix: [1500, 3000, null, "pour l'audit seul, sans mise en œuvre"]
+      geo_full: [1500, 3000, null, "pour l'audit seul, sans mise en œuvre"]
     legal: >-
       Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
       concerne directement votre activité. Répondez « STOP » pour ne plus être contacté : vos
@@ -61,7 +67,7 @@ markets:
     currency: "MAD"
     timezone: "Africa/Casablanca"
     cities: ["Casablanca", "Rabat", "Marrakech", "Tanger", "Agadir", "Fès"]
-    prices: { geo_fix: 990, geo_full: 1490, basique: 3990, standard: 9900, premium: 19900 }
+    prices: { geo_fix: 1490, geo_full: 2990, basique: 3990, standard: 9900, premium: 19900 }
     geo_offers: [geo_fix, geo_full]
     monthly: { basique: 190, standard: 390, premium: 790 }
     benchmarks:
@@ -69,6 +75,8 @@ markets:
       standard: [8000, 25000]
       premium: [15000, 60000]
       audit: [1500, 4000]
+      geo_fix: [1500, 4000, null, "pour l'audit SEO seul, sans mise en œuvre"]
+      geo_full: [3000, 8000, null, "pour un seul mois de SEO"]
     legal: >-
       Vous recevez ce message car les coordonnées de votre activité sont publiques (loi 09-08).
       Répondez « STOP » pour ne plus être contacté : vos données seront supprimées.
@@ -81,7 +89,8 @@ markets:
     timezone: "America/Toronto"
     requires_postal_address: true
     cities: ["Toronto", "Vancouver", "Calgary", "Ottawa"]
-    prices: { geo: 290, basique: 1290, standard: 2990, premium: 6900 }
+    prices: { geo_fix: 490, geo_full: 990, basique: 1290, standard: 2990, premium: 6900 }
+    geo_offers: [geo_fix, geo_full]
     monthly: { basique: 49, standard: 99, premium: 199 }
     legal: >-
       You are receiving this one-off business message because your business email is publicly listed
@@ -96,7 +105,8 @@ markets:
     timezone: "America/Montreal"
     requires_postal_address: true
     cities: ["Montréal", "Québec", "Laval", "Gatineau"]
-    prices: { geo: 290, basique: 1290, standard: 2990, premium: 6900 }
+    prices: { geo_fix: 490, geo_full: 990, basique: 1290, standard: 2990, premium: 6900 }
+    geo_offers: [geo_fix, geo_full]
     monthly: { basique: 49, standard: 99, premium: 199 }
     legal: >-
       Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
@@ -111,7 +121,8 @@ markets:
     timezone: "America/New_York"
     requires_postal_address: true
     cities: ["Miami", "Austin", "Atlanta", "Charlotte", "Tampa", "Nashville", "Denver", "Orlando"]
-    prices: { geo: 290, basique: 990, standard: 2490, premium: 5900 }
+    prices: { geo_fix: 390, geo_full: 790, basique: 990, standard: 2490, premium: 5900 }
+    geo_offers: [geo_fix, geo_full]
     monthly: { basique: 39, standard: 79, premium: 169 }
     legal: >-
       This is a commercial message. You are receiving it because your business email is publicly
@@ -123,7 +134,8 @@ markets:
     currency: "AUD"
     timezone: "Australia/Sydney"
     cities: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast"]
-    prices: { geo: 290, basique: 1290, standard: 2990, premium: 6900 }
+    prices: { geo_fix: 490, geo_full: 990, basique: 1290, standard: 2990, premium: 6900 }
+    geo_offers: [geo_fix, geo_full]
     monthly: { basique: 49, standard: 99, premium: 199 }
     benchmarks:
       basique: [3000, 7000]
@@ -139,7 +151,8 @@ markets:
     currency: "AED"
     timezone: "Asia/Dubai"
     cities: ["Dubai", "Abu Dhabi", "Sharjah"]
-    prices: { geo: 590, basique: 2900, standard: 6900, premium: 16900 }
+    prices: { geo_fix: 1290, geo_full: 2490, basique: 2900, standard: 6900, premium: 16900 }
+    geo_offers: [geo_fix, geo_full]
     monthly: { basique: 149, standard: 290, premium: 590 }
     benchmarks:
       standard: [8000, 35000]
@@ -157,7 +170,8 @@ markets:
     currency_prefix: true
     timezone: "Europe/London"
     cities: ["London", "Manchester", "Birmingham", "Leeds", "Bristol"]
-    prices: { geo: 219, basique: 690, standard: 1690, premium: 4290 }
+    prices: { geo_fix: 290, geo_full: 590, basique: 690, standard: 1690, premium: 4290 }
+    geo_offers: [geo_fix, geo_full]
     monthly: { basique: 29, standard: 59, premium: 129 }
     legal: 'Reply "STOP" to unsubscribe.'
 
@@ -217,8 +231,8 @@ pricing:
   # Sources (sept. 2026) — FR : ipaoo.fr (agence 1 000–6 000 €), fenxi.fr (vitrine 2 000–6 000 € HT, 2–5 sem. ; e-commerce 4 000–20 000 €
   # HT, 4–12 sem.), audit GEO : vigeon.fr / lafabriquedunet.fr (1 500–3 000 €). MA : mumtaz.ma (vitrine
   # simple 3 000–8 000, pro 8 000–25 000, e-commerce 15 000–60 000 MAD), audit SEO : pulsemarketing.ma /
-  # toprank.ma (1 500–4 000 MAD). AU : wolfiq.com.au. AE : codingclave.com (AED 8 000–35 000).
-  # L'audit GEO seul est déductible d'une refonte commandée sous `geo_credit_days` jours.
+  # toprank.ma (audit 1 500–4 000 MAD ; SEO PME 3 000–8 000 MAD/mois). AU : wolfiq.com.au. AE : codingclave.com (AED 8 000–35 000).
+  # Offres GEO (correctifs / optimisation) déductibles d'une refonte commandée sous `geo_credit_days` jours.
   geo_credit_days: 30
   # Offre seule « Audit GEO » (commerces au site correct mais peu visible pour Google et les IA) :
   # prix par marché dans markets.<code>.prices.geo

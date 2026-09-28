@@ -473,4 +473,6 @@ def test_agency_benchmark_in_offer(cfg):
     assert agency_benchmark(fr, "standard", 3900)["saving"] is None  # écart < 15 % : pas affiché
     assert agency_benchmark(market(cfg, "US"), "standard") is None
     geo = geo_offers(cfg, "FR")[0]
-    assert geo["price"] == "149 €" and geo["agency"]["range"] == "1 500 à 3 000 €"
+    assert geo["price"] == "490 €" and geo["agency"]["range"] == "1 500 à 3 000 €" and "sans mise en œuvre" in geo["agency"]["note"]
+    ma = geo_offers(cfg, "MA")
+    assert [o["price"] for o in ma] == ["1 490 MAD", "2 990 MAD"] and ma[1]["recommended"] and ma[1]["agency"]["saving"] == 46

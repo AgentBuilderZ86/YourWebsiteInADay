@@ -10,20 +10,24 @@ Or de plus en plus de clients demandent directement à une IA « quel est le mei
   • {{ f.problem }}
 {% endfor %}
 
-Le rapport complet est en ligne, gratuitement :
+Le rapport complet est en ligne, offert{% if audit_value %} (en agence, un audit de ce type se facture {{ audit_value }}){% endif %} :
 {{ audit_url }}
 
 {% if geo_offers|length > 1 %}
-Deux façons d'y remédier ; nous intervenons directement sur votre site :
+Plutôt que de vous laisser un rapport de plus, nous corrigeons directement votre site :
 
 {% for o in geo_offers %}
-  {{ loop.index }}. {{ o.label }} : {{ o.price }} (livré en {{ o.delivery }}) — {{ o.features[0] }}.
+  {{ loop.index }}. {{ o.label }} : {{ o.price }} (livré en {{ o.delivery }}){% if o.recommended %}  ← conseillé{% endif %}
+
+     {{ o.features[0] }}.
+{% if o.agency %}
+     En agence : {{ o.agency.range }}{% if o.agency.note %} {{ o.agency.note }}{% endif %}.
+{% endif %}
 {% endfor %}
 
-{% if geo_offers[0].agency %}Pour comparaison, une agence facture {{ geo_offers[0].agency.range }} le seul audit SEO, sans rien mettre en place.
-
-{% endif %}
 Dans les deux cas, votre score SEO & GEO (aujourd'hui {{ geo_score }}/100) est remesuré après l'intervention : vous voyez le gain, preuve à l'appui.
+
+Et si vous refaites ensuite votre site avec nous (commande sous {{ geo_credit_days }} jours), le montant est intégralement déduit.
 
 Répondez « 1 » ou « 2 » et je m'en occupe. Vous ne réglez qu'une fois le travail livré.
 {% else %}
