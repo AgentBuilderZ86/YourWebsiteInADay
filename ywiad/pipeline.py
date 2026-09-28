@@ -458,11 +458,13 @@ li.done{{opacity:.45}} span{{color:var(--muted);font-size:13px;display:block}} .
 details{{margin-top:8px;color:var(--muted);font-size:13px}} input{{margin-right:8px;transform:scale(1.2)}}</style></head>
 <body><main><h1>WhatsApp à envoyer</h1><p>{sum(1 for r in rows if r[4])} mobiles (WhatsApp) et
 {sum(1 for r in rows if not r[4])} fixes (appel), triés par priorité. Coche chaque commerce une fois contacté.
-Une réponse « OUI » : transfère-la-moi ou note-la, je prends la suite.</p><p><a class="btn wa" id="send" href="#" style="display:block">Envoyer la liste des cochés à Claude</a></p>
+Une réponse « OUI » : transfère-la-moi ou note-la, je prends la suite.</p><p><a class="btn wa" id="send" href="#" style="display:block">Afficher la liste des cochés (à coller à Claude)</a></p>
+<textarea id="out" readonly style="display:none;width:100%;min-height:90px;border-radius:12px;padding:10px;font:14px monospace"></textarea>
 <ul>{"".join(items)}</ul></main>
 <script>const k="ywiad-wa-done";let d={{}};try{{d=JSON.parse(localStorage.getItem(k)||"{{}}")}}catch(e){{}}
 document.querySelectorAll("input[data-id]").forEach(c=>{{const li=c.closest("li");c.checked=!!d[c.dataset.id]||!!c.dataset.sent;li.classList.toggle("done",c.checked);
 c.addEventListener("change",()=>{{d[c.dataset.id]=c.checked;li.classList.toggle("done",c.checked);try{{localStorage.setItem(k,JSON.stringify(d))}}catch(e){{}}}})}});
-document.getElementById("send").addEventListener("click",e=>{{const ids=[...document.querySelectorAll("input[data-id]:checked")].map(c=>c.dataset.id);
-e.currentTarget.href="mailto:{cfg["business"]["sender_email"]}?subject="+encodeURIComponent("[YWIAD-WA] envoyés")+"&body="+encodeURIComponent("ids: "+ids.join(","));}});</script>
+document.getElementById("send").addEventListener("click",e=>{{e.preventDefault();
+const ids=[...document.querySelectorAll("input[data-id]:checked")].map(c=>c.dataset.id);const o=document.getElementById("out");
+o.style.display="block";o.value="WA envoyés : "+(ids.join(",")||"aucun");o.select();try{{navigator.clipboard.writeText(o.value)}}catch(x){{}}}});</script>
 </body></html>'''
