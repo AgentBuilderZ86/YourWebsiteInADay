@@ -21,6 +21,8 @@ markets:
   FR:
     enabled: true
     name: "France"
+    # Stock de leads qualifiés suffisant : découverte suspendue, envois et relances continuent
+    discover: false
     language: fr
     currency: "€"
     timezone: "Europe/Paris"
@@ -42,6 +44,7 @@ markets:
   BE:
     enabled: true
     name: "Belgique"
+    discover: false
     language: fr
     currency: "€"
     timezone: "Europe/Brussels"
@@ -63,6 +66,7 @@ markets:
   MA:
     enabled: true
     name: "Maroc"
+    discover: false
     language: fr
     currency: "MAD"
     timezone: "Africa/Casablanca"
@@ -84,6 +88,7 @@ markets:
     # Désactivé tant que business.postal_address est vide (adresse postale obligatoire)
     enabled: false
     name: "Canada"
+    priority_weight: 1.4
     language: en
     currency: "CAD"
     timezone: "America/Toronto"
@@ -115,6 +120,7 @@ markets:
     # Désactivé tant que business.postal_address est vide (adresse postale obligatoire)
     enabled: false
     name: "United States"
+    priority_weight: 1.5
     language: en
     currency: "$"
     currency_prefix: true
@@ -130,10 +136,12 @@ markets:
   AU:
     enabled: true
     name: "Australia"
+    priority_weight: 1.4
+    daily_cap: 10
     language: en
     currency: "AUD"
     timezone: "Australia/Sydney"
-    cities: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast"]
+    cities: ["Sydney", "Melbourne", "Brisbane", "Perth", "Adelaide", "Gold Coast", "Canberra", "Newcastle", "Hobart", "Geelong", "Sunshine Coast", "Wollongong"]
     prices: { geo_fix: 490, geo_full: 990, basique: 1290, standard: 2990, premium: 6900 }
     geo_offers: [geo_fix, geo_full]
     monthly: { basique: 49, standard: 99, premium: 199 }
@@ -144,13 +152,32 @@ markets:
     legal: >-
       You are receiving this message because your business email is conspicuously published and our
       offer relates to your business. Reply "STOP" to unsubscribe.
+  NZ:
+    # Unsolicited Electronic Messages Act 2007 : consentement déduit d'une adresse professionnelle
+    # publiée ostensiblement, message lié à l'activité, expéditeur identifié, désinscription effective.
+    enabled: true
+    name: "New Zealand"
+    priority_weight: 1.4
+    daily_cap: 8
+    language: en
+    currency: "NZD"
+    timezone: "Pacific/Auckland"
+    cities: ["Auckland", "Wellington", "Christchurch", "Hamilton", "Tauranga", "Queenstown", "Dunedin", "Napier"]
+    prices: { geo_fix: 490, geo_full: 990, basique: 1290, standard: 2990, premium: 6900 }
+    geo_offers: [geo_fix, geo_full]
+    monthly: { basique: 49, standard: 99, premium: 199 }
+    legal: >-
+      You are receiving this message because your business email address is conspicuously published and
+      our offer relates to your business (Unsolicited Electronic Messages Act 2007). Reply "STOP" to
+      unsubscribe; we will honour it immediately.
   AE:
     enabled: true
     name: "United Arab Emirates"
+    priority_weight: 1.3
     language: en
     currency: "AED"
     timezone: "Asia/Dubai"
-    cities: ["Dubai", "Abu Dhabi", "Sharjah"]
+    cities: ["Dubai", "Abu Dhabi", "Sharjah", "Ajman", "Ras Al Khaimah", "Al Ain"]
     prices: { geo_fix: 1290, geo_full: 2490, basique: 2900, standard: 6900, premium: 16900 }
     geo_offers: [geo_fix, geo_full]
     monthly: { basique: 149, standard: 290, premium: 590 }
@@ -213,7 +240,7 @@ prospecting:
     soap: { osm: "shop=beauty", value: 1.0, tier: premium, fr: "savonnerie", fr_art: "une", en: "soap shop", discover: false }
     carpenter: { osm: "craft=carpenter", value: 1.2, tier: standard, fr: "menuisier", en: "carpenter", discover: false }
   # Nombre de combinaisons (marché, ville, catégorie) explorées par exécution — tournantes
-  combos_per_run: 6
+  combos_per_run: 10
   max_leads_per_run: 80
   # Les commerces sans site ne sont gardés que s'ils ont un email public (sinon injoignables)
   include_no_website: true
@@ -281,6 +308,10 @@ outreach:
   mode: queue
   # Plafond quotidien (premiers contacts + relances). Gmail perso : rester bas pour protéger la réputation.
   daily_send_limit: 25
+  # Part du quota gardée pour des marchés hors fenêtre au moment de l'exécution (ex. { NZ: 5 }).
+  # Inutile tant que la tournée AU/NZ passe en premier dans la journée UTC (00:10) ; chaque marché
+  # anglophone est plafonné par markets.<code>.daily_cap pour laisser de la place aux autres.
+  reserve: {}
   # Heures locales du destinataire pendant lesquelles on envoie (jours ouvrés uniquement)
   send_window: [8, 18]
   # Jours d'envoi (0 = lundi … 6 = dimanche) : les commerçants travaillent le samedi

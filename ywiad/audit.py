@@ -662,7 +662,7 @@ def _fold(text: str) -> str:
     return " ".join(re.findall(r"[a-z0-9]+", text.replace("'", " ").replace("’", " ")))
 
 
-MARKET_TLDS = {"MA": ("ma",), "BE": ("be",), "AE": ("ae",), "AU": ("com.au",), "CA": ("ca",), "QC": ("ca",)}
+MARKET_TLDS = {"MA": ("ma",), "BE": ("be",), "AE": ("ae",), "AU": ("com.au",), "NZ": ("co.nz", "nz"), "CA": ("ca",), "QC": ("ca",)}
 
 
 def own_site_candidates(name: str, email: str | None, city: str | None = None, market: str | None = None) -> list[str]:

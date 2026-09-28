@@ -476,3 +476,21 @@ def test_agency_benchmark_in_offer(cfg):
     assert geo["price"] == "490 €" and geo["agency"]["range"] == "1 500 à 3 000 €" and "sans mise en œuvre" in geo["agency"]["note"]
     ma = geo_offers(cfg, "MA")
     assert [o["price"] for o in ma] == ["1 490 MAD", "2 990 MAD"] and ma[1]["recommended"] and ma[1]["agency"]["saving"] == 46
+
+
+def test_english_markets_focus(cfg):
+    from ywiad.db import DB
+    combos = all_combos(cfg)
+    assert combos and not {c[0] for c in combos} & {"FR", "BE", "MA"}  # stock suffisant : découverte suspendue
+    assert "NZ" in {c[0] for c in combos}
+    au = {"category": "restaurant", "market": "AU", "website": "https://x.com.au", "extra": {}}
+    fr = {**au, "market": "FR"}
+    assert pipeline.priority(cfg, au, 30) > pipeline.priority(cfg, fr, 30)
+    db = DB(str(Path(cfg["paths"]["reports"]).parent / "reserve.sqlite"))
+    db.upsert_lead({"source": "t", "source_id": "nz1", "name": "Kiwi Cafe", "category": "cafe", "market": "NZ",
+                    "email": "hi@kiwi.co.nz", "city": "Auckland", "extra": {}})
+    db.update_lead(1, status="qualified")
+    cfg["outreach"]["reserve"] = {"NZ": 5}
+    noon_paris = datetime(2026, 9, 29, 10, 0, tzinfo=timezone.utc)  # 23 h à Auckland
+    assert pipeline.reserved_budget(db, cfg, noon_paris) == 5
+    assert pipeline.reserved_budget(db, cfg, datetime(2026, 9, 29, 0, 10, tzinfo=timezone.utc)) == 0

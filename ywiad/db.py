@@ -205,6 +205,13 @@ class DB:
                AND (status='queued' OR (status='sent' AND substr(sent_at,1,10)=?))""", (today,)
         ).fetchone()[0]
 
+    def emails_today_market(self, code: str) -> int:
+        today = datetime.now(timezone.utc).date().isoformat()
+        return self.conn.execute(
+            """SELECT COUNT(*) FROM messages m JOIN leads l ON l.id = m.lead_id WHERE m.channel='email' AND l.market=?
+               AND (m.status='queued' OR (m.status='sent' AND substr(m.sent_at,1,10)=?))""", (code, today)
+        ).fetchone()[0]
+
     # --- état persistant (curseur de rotation, géocodage) -----------------
     def get_state(self, key: str, default: Any = None) -> Any:
         row = self.conn.execute("SELECT value FROM state WHERE key=?", (key,)).fetchone()

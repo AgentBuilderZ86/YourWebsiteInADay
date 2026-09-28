@@ -77,7 +77,7 @@ def is_geo_prospect(cfg: dict[str, Any], result: Any) -> bool:
 def geo_priority(cfg: dict[str, Any], lead: dict[str, Any], result: Any) -> float:
     """Moins prioritaire qu'une refonte (panier plus petit) : ~40 % du poids d'un site à refaire."""
     cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {})
-    return round((100 - (geo_score(result.geo) or 0)) * cat.get("value", 1.0) * 0.4, 1)
+    return round((100 - (geo_score(result.geo) or 0)) * cat.get("value", 1.0) * 0.4 * market_weight(cfg, lead), 1)
 
 
 def priority(cfg: dict[str, Any], lead: dict[str, Any], score: int, issues: list[Any] | None = None) -> float:
@@ -93,7 +93,21 @@ def priority(cfg: dict[str, Any], lead: dict[str, Any], score: int, issues: list
         p *= 1.15  # déjà actif en ligne (Facebook, TheFork, Planity…) : sensible au sujet
     if lead.get("extra", {}).get("opening_hours"):
         p *= 1.05  # fiche entretenue : commerce actif
-    return round(p, 1)
+    return round(p * market_weight(cfg, lead), 1)
+
+
+def market_weight(cfg: dict[str, Any], lead: dict[str, Any]) -> float:
+    """Marchés à plus forte valeur (panier, pouvoir d'achat) servis en premier : markets.<code>.priority_weight."""
+    return market(cfg, lead.get("market")).get("priority_weight", 1.0)
+
+
+def reserved_budget(db: DB, cfg: dict[str, Any], now: datetime | None = None) -> int:
+    """Part du quota du jour gardée pour les marchés hors fenêtre maintenant (ex. Australie, envoyée la
+    nuit UTC) qui ont des leads prêts : `outreach.reserve: {AU: 8, …}`."""
+    reserve = cfg["outreach"].get("reserve") or {}
+    ready = {l.get("market") for l in db.leads("qualified") if l.get("email")}
+    return sum(n for code, n in reserve.items()
+               if code in ready and can_email_market(cfg, code)[0] and not in_send_window(cfg, code, now))
 
 
 def step_audit(db: DB, cfg: dict[str, Any], auditor: Callable[..., Any] = audit_url, workers: int = 8) -> dict[str, int]:
@@ -246,6 +260,9 @@ def _sendable(db: DB, cfg: dict[str, Any], lead: dict[str, Any], now: datetime |
     if db.is_opted_out(lead["email"]):
         db.update_lead(lead["id"], status="unsubscribed")
         return False
+    cap = market(cfg, lead.get("market")).get("daily_cap")
+    if cap is not None and db.emails_today_market(lead.get("market")) >= cap:
+        return False  # part du quota du jour laissée aux autres marchés
     return in_send_window(cfg, lead.get("market"), now) and not db.has_pending(lead["id"])
 
 
@@ -412,7 +429,7 @@ def run_all(cfg: dict[str, Any], *, skip_discover: bool = False, now: datetime |
     stats.update(step_audit(db, cfg))
     stats["maquettes"] = step_mockups(db, cfg)
     stats.update(step_replies(db, cfg))
-    budget = max(0, cfg["outreach"].get("daily_send_limit", 25) - db.emails_today())
+    budget = max(0, cfg["outreach"].get("daily_send_limit", 25) - db.emails_today() - reserved_budget(db, cfg, now))
     fu = step_followups(db, cfg, mailer, budget, now)
     stats.update(fu)
     stats.update(step_outreach(db, cfg, mailer, budget - fu["followups"], now))

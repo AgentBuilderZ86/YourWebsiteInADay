@@ -154,8 +154,12 @@ Le vendredi à l'exécution de 14 h 40 UTC, envoyer aussi ce résumé par email 
 |---|---|
 | 07:40 lun–ven | Maroc, France, Belgique, Émirats |
 | 14:40 lun–ven | France, Belgique, Maroc (relances, réponses) + bilan hebdo le vendredi |
-| 22:40 dim–jeu | Australie (lendemain matin) |
+| 00:10 lun–ven | **Australie + Nouvelle-Zélande** (matinée locale), premier envoi de la journée UTC : quota neuf, plafonds `daily_cap` (AU 10, NZ 8) |
 | toutes les heures, 08–19 lun–sam | **Veille réponses** : étape 1 seulement (réponses, rebonds, closing) — pas de prospection ni de premiers envois |
+
+Priorité aux marchés anglophones (paniers plus élevés) : la découverte est suspendue en France, Belgique
+et Maroc (`discover: false`, stock de leads qualifiés suffisant) et concentrée sur AU, NZ, AE ; leurs leads
+passent devant (`priority_weight`). Rouvrir la découverte d'un marché quand son stock qualifié < 15.
 
 États-Unis et Canada / Québec : désactivés dans la config tant qu'aucune adresse postale d'expéditeur
 n'est renseignée. Pour les activer : `business.postal_address` puis `enabled: true` sur US, CA, QC.

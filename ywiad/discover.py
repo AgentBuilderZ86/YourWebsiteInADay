@@ -100,7 +100,7 @@ def all_combos(cfg: dict[str, Any]) -> list[tuple[str, str, str]]:
     """Toutes les combinaisons (marché, ville, catégorie), dans un ordre mélangé mais stable."""
     combos = [
         (code, city, cat)
-        for code, m in cfg["markets"].items() if m.get("enabled")
+        for code, m in cfg["markets"].items() if m.get("enabled") and m.get("discover", True)
         for city, cat in itertools.product(m.get("cities", []), [
             k for k, v in cfg["prospecting"]["categories"].items() if v.get("discover", True)])
     ]
