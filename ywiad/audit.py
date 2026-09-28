@@ -111,6 +111,8 @@ ISSUE_LABELS: dict[str, dict[str, str]] = {
 
 def issue_label(code: str, params: dict[str, Any], lang: str) -> str:
     labels = ISSUE_LABELS.get(lang, ISSUE_LABELS["fr"])
+    if code == "expired" and "host" in params:
+        params = {**params, "host": str(params["host"]).removeprefix("www.")}
     try:
         return labels[code].format(**params)
     except (KeyError, IndexError):

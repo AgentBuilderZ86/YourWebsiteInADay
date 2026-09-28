@@ -162,6 +162,19 @@ def _usable_accent(color: str) -> bool:
     return 0.08 < lum < 0.6  # ni quasi noir, ni trop clair pour du texte blanc
 
 
+CUISINES_FR = {
+    "italian": "italienne", "french": "française", "pasta": "pâtes", "pizza": "pizza", "chinese": "chinoise",
+    "japanese": "japonaise", "sushi": "sushi", "thai": "thaï", "vietnamese": "vietnamienne", "indian": "indienne",
+    "lebanese": "libanaise", "moroccan": "marocaine", "mediterranean": "méditerranéenne", "greek": "grecque",
+    "turkish": "turque", "spanish": "espagnole", "portuguese": "portugaise", "mexican": "mexicaine",
+    "american": "américaine", "burger": "burgers", "crepe": "crêperie", "kebab": "kebab", "seafood": "fruits de mer",
+    "fish": "poisson", "steak_house": "grillades", "regional": "régionale", "asian": "asiatique", "african": "africaine",
+    "belgian": "belge", "sandwich": "sandwichs", "coffee_shop": "café", "tea": "salon de thé", "cake": "pâtisserie",
+    "ice_cream": "glacier", "vegetarian": "végétarienne", "vegan": "vegan", "international": "internationale",
+    "korean": "coréenne", "brasserie": "brasserie", "tapas": "tapas", "halal": "halal",
+}
+
+
 def mockup_spec(lead: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any]:
     """Tout ce qui rend une maquette propre à CE commerce (partagé par la maquette web et l'email)."""
     m = market(cfg, lead.get("market"))
@@ -187,7 +200,9 @@ def mockup_spec(lead: dict[str, Any], cfg: dict[str, Any]) -> dict[str, Any]:
     if stars.isdigit() and 0 < int(stars) <= 5:
         facts.append("★" * int(stars))
     if extra.get("cuisine"):
-        facts.append(extra["cuisine"].replace(";", " · ").replace("_", " ").title())
+        names = [c.strip().lower() for c in str(extra["cuisine"]).split(";") if c.strip()]
+        labels = [CUISINES_FR.get(c, c.replace("_", " ")) if lang == "fr" else c.replace("_", " ") for c in names]
+        facts.append(" · ".join(l[:1].upper() + l[1:] for l in labels))
     if city:
         facts.append(city)
 
