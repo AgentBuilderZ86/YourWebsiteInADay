@@ -144,16 +144,33 @@ prospecting:
   categories:
     hotel: { osm: "tourism=hotel", value: 1.5, tier: premium, fr: "hôtel", en: "hotel" }
     dentist: { osm: "amenity=dentist", value: 1.5, tier: standard, fr: "cabinet dentaire", en: "dental practice" }
-    estate_agent: { osm: "office=estate_agent", value: 1.4, tier: standard, fr: "agence immobilière", en: "real estate agency" }
+    estate_agent: { osm: "office=estate_agent", value: 1.4, tier: standard, fr: "agence immobilière", fr_art: "une", en: "real estate agency" }
     restaurant: { osm: "amenity=restaurant", value: 1.2, tier: standard, fr: "restaurant", en: "restaurant" }
     beauty: { osm: "shop=beauty", value: 1.2, tier: standard, fr: "institut de beauté", en: "beauty salon" }
     hairdresser: { osm: "shop=hairdresser", value: 1.1, tier: standard, fr: "salon de coiffure", en: "hair salon" }
     optician: { osm: "shop=optician", value: 1.1, tier: standard, fr: "opticien", en: "optician" }
     florist: { osm: "shop=florist", value: 1.0, tier: premium, fr: "fleuriste", en: "florist" }
-    clothes: { osm: "shop=clothes", value: 1.0, tier: premium, fr: "boutique", en: "boutique" }
+    clothes: { osm: "shop=clothes", value: 1.0, tier: premium, fr: "boutique", fr_art: "une", en: "boutique" }
     car_repair: { osm: "shop=car_repair", value: 1.0, tier: basique, fr: "garage", en: "auto repair shop" }
-    bakery: { osm: "shop=bakery", value: 0.9, tier: basique, fr: "boulangerie", en: "bakery" }
+    bakery: { osm: "shop=bakery", value: 0.9, tier: basique, fr: "boulangerie", fr_art: "une", en: "bakery" }
     cafe: { osm: "amenity=cafe", value: 0.8, tier: basique, fr: "café", en: "café" }
+    # Métiers reçus par import (ex. dossiers Devanture) : hors rotation de découverte automatique
+    bar: { osm: "amenity=bar", value: 0.9, tier: basique, fr: "bar", en: "bar", discover: false }
+    fast_food: { osm: "amenity=fast_food", value: 0.8, tier: basique, fr: "snack", en: "takeaway", discover: false }
+    pharmacy: { osm: "amenity=pharmacy", value: 1.2, tier: standard, fr: "pharmacie", fr_art: "une", en: "pharmacy", discover: false }
+    wine_shop: { osm: "shop=alcohol", value: 1.0, tier: standard, fr: "cave à vins", fr_art: "une", en: "wine shop", discover: false }
+    deli: { osm: "shop=deli", value: 1.0, tier: standard, fr: "traiteur", en: "deli", discover: false }
+    cheese: { osm: "shop=cheese", value: 1.0, tier: standard, fr: "fromagerie", fr_art: "une", en: "cheese shop", discover: false }
+    jewelry: { osm: "shop=jewelry", value: 1.2, tier: premium, fr: "bijouterie", fr_art: "une", en: "jeweller", discover: false }
+    antiques: { osm: "shop=antiques", value: 1.0, tier: premium, fr: "antiquaire", en: "antiques shop", discover: false }
+    furniture: { osm: "shop=furniture", value: 1.1, tier: premium, fr: "magasin de meubles", en: "furniture store", discover: false }
+    gift: { osm: "shop=gift", value: 0.9, tier: premium, fr: "boutique de cadeaux", fr_art: "une", en: "gift shop", discover: false }
+    stationery: { osm: "shop=stationery", value: 0.9, tier: basique, fr: "papeterie", fr_art: "une", en: "stationery shop", discover: false }
+    collector: { osm: "shop=collector", value: 0.9, tier: premium, fr: "boutique de collection", fr_art: "une", en: "collectors' shop", discover: false }
+    music: { osm: "shop=music", value: 0.9, tier: premium, fr: "disquaire", en: "record shop", discover: false }
+    tattoo: { osm: "shop=tattoo", value: 1.1, tier: standard, fr: "salon de tatouage", en: "tattoo studio", discover: false }
+    travel_agency: { osm: "shop=travel_agency", value: 1.2, tier: standard, fr: "agence de voyages", fr_art: "une", en: "travel agency", discover: false }
+    carpenter: { osm: "craft=carpenter", value: 1.2, tier: standard, fr: "menuisier", en: "carpenter", discover: false }
   # Nombre de combinaisons (marché, ville, catégorie) explorées par exécution — tournantes
   combos_per_run: 6
   max_leads_per_run: 80

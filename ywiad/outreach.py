@@ -30,10 +30,10 @@ STRINGS = {
     "fr": {
         "hello": "Bonjour,",
         "tagline": "Studio web · sites livrés en 24 h",
-        "intro_site": "J'ai découvert le site {de_name} en cherchant un {cat} à {city}. Je conçois des sites pour les commerces indépendants, alors j'ai pris quelques minutes pour l'analyser : voici ce qu'un client voit en arrivant — et ce qui le fait souvent repartir.",
-        "intro_down": "En cherchant un {cat} à {city}, j'ai voulu consulter le site {de_name} ({host})… mais il ne s'affiche plus. Chaque client qui tombe sur une erreur part chez un concurrent, et Google finit par retirer le site de ses résultats.",
-        "intro_social": "En cherchant un {cat} à {city}, j'ai trouvé {name} sur {platform}, mais pas de site à votre nom. Une page {platform} ne remplace pas un site : elle remonte mal quand un client tape « {cat} {city} » sur Google, et vous n'en maîtrisez ni la présentation ni les règles.",
-        "intro_none": "En cherchant un {cat} à {city}, j'ai trouvé {name}, mais aucun site web. Aujourd'hui, la plupart des clients vérifient horaires, adresse et avis en ligne avant de se déplacer — sans site, ils choisissent souvent un concurrent.",
+        "intro_site": "J'ai découvert le site {de_name} en cherchant {un_cat} à {city}. Je conçois des sites pour les commerces indépendants, alors j'ai pris quelques minutes pour l'analyser : voici ce qu'un client voit en arrivant — et ce qui le fait souvent repartir.",
+        "intro_down": "En cherchant {un_cat} à {city}, j'ai voulu consulter le site {de_name} ({host})… mais il ne s'affiche plus. Chaque client qui tombe sur une erreur part chez un concurrent, et Google finit par retirer le site de ses résultats.",
+        "intro_social": "En cherchant {un_cat} à {city}, j'ai trouvé {name} sur {platform}, mais pas de site à votre nom. Une page {platform} ne remplace pas un site : elle remonte mal quand un client tape « {cat} {city} » sur Google, et vous n'en maîtrisez ni la présentation ni les règles.",
+        "intro_none": "En cherchant {un_cat} à {city}, j'ai trouvé {name}, mais aucun site web. Aujourd'hui, la plupart des clients vérifient horaires, adresse et avis en ligne avant de se déplacer — sans site, ils choisissent souvent un concurrent.",
         "audit_label": "Audit express",
         "verdicts": ("Critique", "À refaire", "À moderniser"),
         "problem": {"social_only": "Pas de site à votre nom", "no_site": "Aucun site web trouvé", "expired": "Votre site a disparu d'internet",
@@ -58,10 +58,10 @@ STRINGS = {
     "en": {
         "hello": "Hi,",
         "tagline": "Web studio · websites live in 24 hours",
-        "intro_site": "I came across {name}'s website while looking for a {cat} in {city}. I design websites for independent businesses, so I took a few minutes to review it: here's what a customer sees when they land — and what often makes them leave.",
-        "intro_down": "While looking for a {cat} in {city}, I tried to visit {name}'s website ({host})… but it no longer loads. Every customer who hits an error goes to a competitor, and Google eventually drops the site from its results.",
-        "intro_social": "While looking for a {cat} in {city}, I found {name} on {platform}, but no website of your own. A {platform} page is no substitute for a website: it ranks poorly when customers search \"{cat} {city}\" on Google, and you control neither its look nor its rules.",
-        "intro_none": "While looking for a {cat} in {city}, I found {name} but no website. Most customers now check opening hours, location and reviews online before visiting — without a site, many pick a competitor.",
+        "intro_site": "I came across {name}'s website while looking for {a_cat} in {city}. I design websites for independent businesses, so I took a few minutes to review it: here's what a customer sees when they land — and what often makes them leave.",
+        "intro_down": "While looking for {a_cat} in {city}, I tried to visit {name}'s website ({host})… but it no longer loads. Every customer who hits an error goes to a competitor, and Google eventually drops the site from its results.",
+        "intro_social": "While looking for {a_cat} in {city}, I found {name} on {platform}, but no website of your own. A {platform} page is no substitute for a website: it ranks poorly when customers search \"{cat} {city}\" on Google, and you control neither its look nor its rules.",
+        "intro_none": "While looking for {a_cat} in {city}, I found {name} but no website. Most customers now check opening hours, location and reviews online before visiting — without a site, many pick a competitor.",
         "audit_label": "Quick audit",
         "verdicts": ("Critical", "Needs a rebuild", "Needs updating"),
         "problem": {"social_only": "No website of your own", "no_site": "No website found", "expired": "Your website has vanished",
@@ -148,6 +148,8 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
     host = urlparse(lead["website"]).netloc.removeprefix("www.") if lead.get("website") else ""
     fmt = {"name": lead["name"], "de_name": de_name(lead["name"]), "cat": cat.get(lang) or ("commerce" if lang == "fr" else "business"),
            "city": lead.get("city") or ("votre ville" if lang == "fr" else "your area"), "host": host}
+    fmt["un_cat"] = f"{cat.get('fr_art', 'un')} {fmt['cat']}"
+    fmt["a_cat"] = f"{'an' if fmt['cat'][:1].lower() in 'aeiou' else 'a'} {fmt['cat']}"
     platform = None if lead.get("website") else social_platform(lead.get("extra"))
     fmt["platform"] = platform or ""
     intro = s["intro_site" if has_site else "intro_down" if site_down else "intro_social" if platform else "intro_none"].format(**fmt)

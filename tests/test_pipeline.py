@@ -414,3 +414,14 @@ def test_old_copyright_weighs_more():
                      page_bytes=50_000, https_ok=True, ssl_valid=True)
     stale = [i for i in r.issues if i.code == "stale"]
     assert stale and stale[0].penalty == 20
+
+
+def test_feminine_category_article():
+    from ywiad.config import load_config
+    from ywiad.outreach import render_email
+    cfg = load_config()
+    lead = {"id": 2, "name": "Pharmacie du Pont", "category": "pharmacy", "market": "FR", "city": "Lyon",
+            "website": None, "email": "p@example.fr", "score": 0, "recommended_tier": "standard",
+            "issues": [{"code": "no_site", "penalty": 100, "params": {}}], "extra": {}}
+    _, body = render_email("initial", lead, cfg, mockup_url="https://x/demo/")
+    assert "En cherchant une pharmacie à Lyon" in body

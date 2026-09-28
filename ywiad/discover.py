@@ -101,7 +101,8 @@ def all_combos(cfg: dict[str, Any]) -> list[tuple[str, str, str]]:
     combos = [
         (code, city, cat)
         for code, m in cfg["markets"].items() if m.get("enabled")
-        for city, cat in itertools.product(m.get("cities", []), cfg["prospecting"]["categories"])
+        for city, cat in itertools.product(m.get("cities", []), [
+            k for k, v in cfg["prospecting"]["categories"].items() if v.get("discover", True)])
     ]
     random.Random(42).shuffle(combos)
     return combos
