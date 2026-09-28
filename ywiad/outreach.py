@@ -116,7 +116,10 @@ def de_name(name: str) -> str:
         if name.startswith(article) or name.startswith(article.lower()):
             return contracted + name[len(article):]
     first = name[:1].lower()
-    return f"d'{name}" if first and first in "aeiouyhâàéèêîïôûœ" else f"de {name}"
+    if first == "h":  # h aspiré par défaut (Happy, Hong Kong…) ; élision seulement pour les h muets connus
+        mute = name.lower().split(" ")[0] in {"hôtel", "hotel", "hammam", "herboristerie", "horlogerie", "huilerie", "hôtellerie"}
+        return f"d'{name}" if mute else f"de {name}"
+    return f"d'{name}" if first and first in "aeiouyâàéèêîïôûœ" else f"de {name}"
 
 
 def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) -> dict[str, Any]:

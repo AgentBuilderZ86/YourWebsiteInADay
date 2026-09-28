@@ -325,6 +325,7 @@ def test_french_elision_and_custom_domain_site():
     assert de_name("Hotel Espagne21") == "d'Hotel Espagne21"
     assert de_name("Le 44 Rue des Fripiers") == "du 44 Rue des Fripiers"
     assert de_name("Les Portes D’Orient") == "des Portes D’Orient"
+    assert de_name("Happy Times") == "de Happy Times"
     assert de_name("Shine Spa") == "de Shine Spa"
     assert pipeline.website_from_email({"website": None, "email": "contact@laurabinstitut.fr"}) == "https://laurabinstitut.fr"
     assert pipeline.website_from_email({"website": None, "email": "salon@gmail.com"}) is None
