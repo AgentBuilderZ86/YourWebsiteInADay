@@ -217,7 +217,7 @@ outreach:
   send_window: [8, 18]
   # Jours d'envoi (0 = lundi … 6 = dimanche) : les commerçants travaillent le samedi
   send_weekdays: [0, 1, 2, 3, 4, 5]
-  followup_days: [3, 7, 14]
+  followup_days: [2, 5, 10]
   smtp:
     host: "smtp.gmail.com"
     port: 587

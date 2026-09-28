@@ -55,6 +55,18 @@ scripts/state.sh pull
     créneaux de 15 min libres dans Google Calendar (jours ouvrés, heures de bureau du prospect).
   - Intention d'acheter / de payer / de signer → répondre qu'AZ revient vers lui dans la journée, et
     envoyer à azriouil.az@gmail.com un email « [CLOSING] <commerce> — <offre> — <prix> » avec le fil.
+
+**Objectif : clôturer vite.** Toute réponse non négative est traitée dans l'heure (veille horaire) :
+  - « OUI » / « ça m'intéresse » sans autre question = intention d'achat : remercier, confirmer l'offre
+    conseillée et son prix, annoncer la mise en ligne sous le délai de l'offre dès validation, demander
+    les 3 éléments utiles (logo ou photo, horaires, numéro à afficher) et proposer WhatsApp
+    (+212 6 62 45 81 51) pour aller plus vite ; puis email « [CLOSING] » à AZ.
+  - Question de prix / « trop cher » : rappeler l'offre Basique (la moins chère du marché), que le
+    paiement n'intervient qu'une fois le site en ligne et validé, et que la maquette est déjà prête.
+    Jamais de remise inventée : une remise se décide avec AZ (email « [CLOSING] » avec la demande).
+  - Demande de modification de la maquette : la faire (textes, couleurs, photos fournies), republier
+    `ywiad site` + déploiement, renvoyer le lien dans le fil le jour même.
+  - Toujours : réponse courte, dans sa langue, un seul appel à l'action, signature AZ + WhatsApp.
 - Rebonds : `from:(mailer-daemon OR postmaster) newer_than:4d` → pour chaque adresse en échec,
   retrouver le lead (`ywiad leads --json`), `ywiad mark <id> lost` et `ywiad optout <email>`.
 
@@ -122,6 +134,7 @@ Le vendredi à l'exécution de 14 h 40 UTC, envoyer aussi ce résumé par email 
 | 07:40 lun–ven | Maroc, France, Belgique, Émirats |
 | 14:40 lun–ven | France, Belgique, Maroc (relances, réponses) + bilan hebdo le vendredi |
 | 22:40 dim–jeu | Australie (lendemain matin) |
+| toutes les heures, 08–19 lun–sam | **Veille réponses** : étape 1 seulement (réponses, rebonds, closing) — pas de prospection ni de premiers envois |
 
 États-Unis et Canada / Québec : désactivés dans la config tant qu'aucune adresse postale d'expéditeur
 n'est renseignée. Pour les activer : `business.postal_address` puis `enabled: true` sur US, CA, QC.

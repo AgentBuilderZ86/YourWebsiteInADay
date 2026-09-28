@@ -26,7 +26,7 @@ Our turnkey packages (design, copy, launch, hosting and HTTPS included):
 
 {% endfor %}
 
-If you like it, let's have a 10-minute chat this week to tailor it to your business. Just reply to this email.
+If you like it, just reply "YES" to this email: I'll tailor it to your business and put it live under your name. You only pay once the site is live and you've approved it.
 
 Best regards,
 {% include "emails/en/_signature.txt" %}

@@ -7,6 +7,6 @@ Just following up about {{ lead.name }}'s website.{% if mockup_url %} Your free 
 
 {% if has_site or site_down %}The most urgent point: {{ hook }}.{% else %}A simple one-page site is often enough to start showing up in local Google searches.{% endif %} We can fix this in {{ recommended.delivery }} with our {{ recommended.short }} package ({{ recommended.price }}).
 
-Shall I send you a quote?
+Just reply "YES" and I'll get it live — you only pay once the site is online and you've approved it.
 
 {% include "emails/en/_signature.txt" %}

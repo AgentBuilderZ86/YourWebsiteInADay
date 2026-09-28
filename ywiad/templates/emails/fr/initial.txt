@@ -26,7 +26,7 @@ Nos formules, clé en main (design, textes, mise en ligne, hébergement et HTTPS
 
 {% endfor %}
 
-Si le rendu vous plaît, je vous propose un échange de 10 minutes cette semaine pour l'adapter à votre activité. Il suffit de répondre à cet email.
+Si le rendu vous plaît, répondez simplement « OUI » à cet email : je l'adapte à votre activité et je le mets en ligne à votre nom. Vous ne réglez qu'une fois le site en ligne et validé par vous.
 
 Bien cordialement,
 {% include "emails/fr/_signature.txt" %}

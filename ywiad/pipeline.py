@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import re
+
 import csv
 import logging
 from concurrent.futures import ThreadPoolExecutor
@@ -362,6 +364,7 @@ def write_report(db: DB, cfg: dict[str, Any], run_stats: dict[str, Any]) -> str:
     out.mkdir(parents=True, exist_ok=True)
     report = out / f"{date.today().isoformat()}.md"
     report.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    (out / "whatsapp.html").write_text(whatsapp_page(db, cfg), encoding="utf-8")
     with open(out / "whatsapp_a_envoyer.csv", "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["id", "nom", "telephone", "message"])
@@ -392,3 +395,57 @@ def run_all(cfg: dict[str, Any], *, skip_discover: bool = False, now: datetime |
     stats.update(step_outreach(db, cfg, mailer, budget - fu["followups"], now))
     stats["en file"] = len(db.messages("queued"))
     return stats, write_report(db, cfg, stats)
+
+
+def _intl_phone(phone: str | None, prefix: str) -> str | None:
+    d = re.sub(r"\D", "", (phone or "").split(";")[0])
+    if d.startswith("00"):
+        d = d[2:]
+    elif d.startswith("0"):
+        d = prefix + d[1:]
+    return d if d.startswith(prefix) and len(d) >= 11 else None
+
+
+def whatsapp_page(db: DB, cfg: dict[str, Any]) -> str:
+    """Page à ouvrir sur téléphone : un bouton WhatsApp pré-rempli par commerce marocain sans email
+    (mobiles d'abord, par priorité), et un bouton d'appel pour les fixes. Coché = mémorisé sur l'appareil."""
+    from html import escape as esc
+    from urllib.parse import quote
+    rows = []
+    for lead in db.leads("no_contact"):
+        if lead.get("market") not in WHATSAPP_MARKETS or db.is_opted_out(lead.get("email") or ""):
+            continue
+        num = _intl_phone(lead.get("phone"), "212")
+        if not num:
+            continue
+        mobile = num[3] in "67"
+        msg = render_whatsapp(lead, cfg, mockup_url(lead, cfg))
+        rows.append((not mobile, -(lead.get("priority") or 0), lead, num, mobile, msg))
+    rows.sort(key=lambda r: (r[0], r[1]))
+    items = []
+    for _, _, lead, num, mobile, msg in rows:
+        cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {}).get("fr", "")
+        action = (f'<a class="btn wa" href="https://wa.me/{num}?text={quote(msg)}">WhatsApp</a>' if mobile
+                  else f'<a class="btn tel" href="tel:+{num}">Appeler (fixe)</a>')
+        items.append(f'''<li id="l{lead["id"]}"><label><input type="checkbox" data-id="{lead["id"]}">
+<b>{esc(lead["name"])}</b> <span>{esc(cat)} · {esc(lead.get("city") or "")} · +{num}</span></label>
+<div class="row">{action}<a class="btn ghost" href="{esc(mockup_url(lead, cfg) or "")}">Maquette</a></div>
+<details><summary>Message</summary><p>{esc(msg)}</p></details></li>''')
+    return f'''<!doctype html><html lang="fr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1"><title>WhatsApp à envoyer</title>
+<style>:root{{--bg:#f3efe9;--card:#fff;--ink:#1a1614;--muted:#6b625c;--wa:#1f8f4e;--line:#e8e2da}}
+@media (prefers-color-scheme:dark){{:root{{--bg:#161412;--card:#221f1c;--ink:#f3efe9;--muted:#a79d95;--line:#3a3430}}}}
+body{{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 -apple-system,Segoe UI,Roboto,sans-serif}}
+main{{max-width:640px;margin:0 auto;padding:20px 16px 60px}} h1{{font-family:Georgia,serif;font-weight:400}}
+ul{{list-style:none;padding:0}} li{{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin:0 0 10px}}
+li.done{{opacity:.45}} span{{color:var(--muted);font-size:13px;display:block}} .row{{display:flex;gap:8px;margin-top:10px}}
+.btn{{flex:1;text-align:center;padding:11px;border-radius:999px;text-decoration:none;font-weight:600}}
+.wa{{background:var(--wa);color:#fff}} .tel{{background:var(--ink);color:var(--bg)}} .ghost{{border:1px solid var(--line);color:var(--ink)}}
+details{{margin-top:8px;color:var(--muted);font-size:13px}} input{{margin-right:8px;transform:scale(1.2)}}</style></head>
+<body><main><h1>WhatsApp à envoyer</h1><p>{sum(1 for r in rows if r[4])} mobiles (WhatsApp) et
+{sum(1 for r in rows if not r[4])} fixes (appel), triés par priorité. Coche chaque commerce une fois contacté.
+Une réponse « OUI » : transfère-la-moi ou note-la, je prends la suite.</p><ul>{"".join(items)}</ul></main>
+<script>const k="ywiad-wa-done";let d={{}};try{{d=JSON.parse(localStorage.getItem(k)||"{{}}")}}catch(e){{}}
+document.querySelectorAll("input[data-id]").forEach(c=>{{const li=c.closest("li");c.checked=!!d[c.dataset.id];li.classList.toggle("done",c.checked);
+c.addEventListener("change",()=>{{d[c.dataset.id]=c.checked;li.classList.toggle("done",c.checked);try{{localStorage.setItem(k,JSON.stringify(d))}}catch(e){{}}}})}});</script>
+</body></html>'''
