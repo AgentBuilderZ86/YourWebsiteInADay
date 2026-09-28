@@ -170,6 +170,10 @@ prospecting:
     music: { osm: "shop=music", value: 0.9, tier: premium, fr: "disquaire", en: "record shop", discover: false }
     tattoo: { osm: "shop=tattoo", value: 1.1, tier: standard, fr: "salon de tatouage", en: "tattoo studio", discover: false }
     travel_agency: { osm: "shop=travel_agency", value: 1.2, tier: standard, fr: "agence de voyages", fr_art: "une", en: "travel agency", discover: false }
+    upholsterer: { osm: "craft=upholsterer", value: 1.1, tier: standard, fr: "tapissier-décorateur", en: "upholsterer", discover: false }
+    copyshop: { osm: "shop=copyshop", value: 0.8, tier: basique, fr: "imprimerie", fr_art: "une", en: "print shop", discover: false }
+    video: { osm: "shop=video", value: 0.7, tier: basique, fr: "vidéoclub", en: "video store", discover: false }
+    soap: { osm: "shop=beauty", value: 1.0, tier: premium, fr: "savonnerie", fr_art: "une", en: "soap shop", discover: false }
     carpenter: { osm: "craft=carpenter", value: 1.2, tier: standard, fr: "menuisier", en: "carpenter", discover: false }
   # Nombre de combinaisons (marché, ville, catégorie) explorées par exécution — tournantes
   combos_per_run: 6

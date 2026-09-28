@@ -35,6 +35,7 @@ def no_dns(monkeypatch):
     """Pas de requête DNS réelle pendant les tests."""
     monkeypatch.setattr("ywiad.audit.has_mx", lambda domain: True)
     monkeypatch.setattr("ywiad.audit.domain_exists", lambda domain: True)
+    monkeypatch.setattr("ywiad.pipeline.find_own_site", lambda *a, **k: (None, None))
 
 
 @pytest.fixture
@@ -425,3 +426,10 @@ def test_feminine_category_article():
             "issues": [{"code": "no_site", "penalty": 100, "params": {}}], "extra": {}}
     _, body = render_email("initial", lead, cfg, mockup_url="https://x/demo/")
     assert "En cherchant une pharmacie à Lyon" in body
+
+
+def test_own_site_candidates_cover_name_and_city_patterns():
+    from ywiad.audit import own_site_candidates
+    c = own_site_candidates("Le Commerce", "lecommerce07@gmail.com", "Lyon")
+    assert "lecommercelyon.fr" in c and "commerce-lyon.fr" in c
+    assert "cote-vin-lyon.com" in own_site_candidates("Côté vin", "davysouzy@yahoo.fr", "Lyon")

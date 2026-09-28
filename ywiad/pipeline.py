@@ -9,7 +9,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Iterable
 
-from .audit import FREE_MAIL, audit_url, best_emails, issue_dict
+from .audit import find_own_site, FREE_MAIL, audit_url, best_emails, issue_dict
 from .db import DB, now_iso
 from .discover import discover, import_csv, next_combos, social_platform
 from .mailer import Mailer, fetch_replies
@@ -85,11 +85,21 @@ def step_audit(db: DB, cfg: dict[str, Any], auditor: Callable[..., Any] = audit_
     threshold = a.get("bad_site_threshold", 60)
     include_no_site = cfg["prospecting"].get("include_no_website", True)
     leads = db.leads("new")
+    held = []
     for lead in leads:
         guessed = website_from_email(lead)
+        if not guessed and not lead.get("website"):
+            # Jamais « aucun site » sans avoir cherché un domaine à son nom
+            guessed, state = find_own_site(lead["name"], lead.get("email"), lead.get("city"))
+            if state == "construction":
+                extra = {**(lead.get("extra") or {}), "audit_note": f"site en construction sur {guessed}"}
+                db.update_lead(lead["id"], status="disqualified", extra=extra)
+                held.append(lead["id"])
+                continue
         if guessed:
             lead["website"] = guessed
             db.update_lead(lead["id"], website=guessed)
+    leads = [l for l in leads if l["id"] not in held]
     kwargs = {"timeout": a.get("timeout_seconds", 15), "use_pagespeed": a.get("use_pagespeed", False)}
     with ThreadPoolExecutor(max_workers=workers) as pool:
         results = list(pool.map(lambda l: auditor(l.get("website"), **kwargs), leads))

@@ -472,3 +472,66 @@ def audit_url(url: str | None, *, timeout: int = 15, use_pagespeed: bool = False
             result.issues.append(Issue("pagespeed", 10, {"score": ps}))
             result.score = max(0, result.score - 10)
     return result
+
+
+# --- Site « caché » : commerce sans site déclaré, mais un domaine à son nom existe -----------------
+
+CONSTRUCTION_MARKERS = ("coming soon", "under construction", "en construction", "prochainement disponible",
+                        "site en cours de", "bientôt disponible", "bientot disponible", "maintenance mode")
+
+
+def _fold(text: str) -> str:
+    import unicodedata
+    text = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode().lower()
+    return " ".join(re.findall(r"[a-z0-9]+", text.replace("'", " ").replace("’", " ")))
+
+
+def own_site_candidates(name: str, email: str | None, city: str | None = None) -> list[str]:
+    """Domaines plausibles : nom (collé, avec tirets, sans article), partie locale de l'email, ± « lyon »…"""
+    words = _fold(name).split()
+    core = [w for w in words if w not in ("le", "la", "les", "l", "chez", "de", "du", "des", "et")] or words
+    local = (email or "").split("@")[0].lower()
+    bases = {"".join(words), "-".join(words), "".join(core), "-".join(core),
+             re.sub(r"[^a-z0-9]", "", local), re.sub(r"[^a-z0-9-]", "", local.replace(".", "-").replace("_", "-"))}
+    bases = {b.strip("-") for b in bases if len(b.strip("-")) >= 4}
+    c = "".join(_fold(city or "").split()[:1])
+    if c:
+        bases |= {f"{b}-{c}" for b in bases} | {f"{b}{c}" for b in bases if "-" not in b}
+    return sorted({f"{b}.{tld}" for b in bases for tld in ("fr", "com")})
+
+
+def find_own_site(name: str, email: str | None, city: str | None, *, timeout: int = 10) -> tuple[str | None, str | None]:
+    """Cherche un site à son nom. Retourne (url, None) si trouvé, (url, "construction") si le domaine
+    affiche une page « en construction », (None, None) sinon. Un site n'est retenu que si sa page cite le
+    nom du commerce ET sa ville : un homonyme ailleurs (terramia.com, marathon à New York) est ignoré."""
+    words = _fold(name).split()
+    core = " ".join(w for w in words if w not in ("le", "la", "les", "l", "chez")) or " ".join(words)
+    city_f = _fold(city or "")
+    for domain in own_site_candidates(name, email, city):
+        if domain_exists(domain) is not True:
+            continue
+        try:
+            r = requests.get(f"https://{domain}", headers=HEADERS, timeout=timeout, allow_redirects=True)
+        except requests.RequestException:
+            continue
+        if r.status_code >= 400:
+            continue
+        html = r.text or ""
+        title = (re.search(r"<title[^>]*>(.*?)</title>", html, re.S | re.I) or [None, ""])[1]
+        text = " ".join(re.sub(r"<script.*?</script>|<style.*?</style>|<[^>]+>", " ", html, flags=re.S | re.I).split())
+        if is_parking_page(title, text, domain):
+            continue
+        page = _fold(title + " " + text[:20000])
+        tiny = _fold(title + " " + text[:600])
+        if len(text) < 600 and any(m in tiny for m in (_fold(x) for x in CONSTRUCTION_MARKERS)):
+            if core.replace(" ", "") in domain.replace("-", ""):
+                return f"https://{domain}", "construction"
+            continue
+        full_ns, core_ns = "".join(words), core.replace(" ", "")
+        title_ns, page_ns = _fold(title).replace(" ", ""), page.replace(" ", "")
+        named = (full_ns in title_ns                                   # « Le Commerce – Bistro » dans le titre
+                 or (" " in core and core in page)                     # nom de plusieurs mots cité dans la page
+                 or (core_ns == full_ns and core_ns in page_ns))       # nom d'un mot sans article (« B A R O C O »)
+        if named and (not city_f or city_f in page):
+            return f"https://{domain}", None
+    return None, None
