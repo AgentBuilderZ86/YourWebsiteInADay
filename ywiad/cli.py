@@ -57,6 +57,8 @@ def main(argv: list[str] | None = None) -> int:
     o.add_argument("email")
     w = sub.add_parser("wa-sent", help="enregistrer des WhatsApp envoyés par AZ (ids de leads)")
     w.add_argument("ids", help="ids séparés par des virgules, ex. 591,602")
+    a = sub.add_parser("set-address", help="adresse postale de l'expéditeur (US/CA), stockée dans la base chiffrée")
+    a.add_argument("address")
 
     args = parser.parse_args(argv)
     logging.basicConfig(level=logging.INFO if args.verbose else logging.WARNING, format="%(message)s")
@@ -134,6 +136,9 @@ def main(argv: list[str] | None = None) -> int:
     elif args.cmd == "wa-sent":
         for i in [int(x) for x in args.ids.replace(" ", "").split(",") if x]:
             print(pipeline.mark_whatsapp_sent(db, i))
+    elif args.cmd == "set-address":
+        db.set_state("postal_address", args.address.strip())
+        print("Adresse enregistrée (base chiffrée, hors dépôt).")
     return 0
 
 

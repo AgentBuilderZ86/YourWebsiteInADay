@@ -13,6 +13,9 @@ business:
   mockup_base_url: "https://yourwebsiteinaday.netlify.app/demo"
   # Adresse postale de l'expéditeur : OBLIGATOIRE pour les États-Unis (CAN-SPAM) et le Canada (LCAP/CASL).
   # Tant qu'elle est vide, les marchés marqués requires_postal_address ne reçoivent aucun email.
+  # Donnée privée : ne pas la saisir ici (dépôt public). `ywiad set-address "…"` l'enregistre dans la
+  # base CRM chiffrée ; la variable YWIAD_POSTAL_ADDRESS la remplace si besoin. Affichée seulement
+  # dans les emails des marchés qui l'exigent (US, CA, QC).
   postal_address: ""
 
 # Marchés ciblés. Seuls les marchés enabled: true sont prospectés.
@@ -85,8 +88,8 @@ markets:
       Vous recevez ce message car les coordonnées de votre activité sont publiques (loi 09-08).
       Répondez « STOP » pour ne plus être contacté : vos données seront supprimées.
   CA:
-    # Désactivé tant que business.postal_address est vide (adresse postale obligatoire)
-    enabled: false
+    # Adresse postale obligatoire (CAN-SPAM / LCAP) : fournie via `ywiad set-address`
+    enabled: true
     name: "Canada"
     priority_weight: 1.4
     language: en
@@ -101,8 +104,8 @@ markets:
       You are receiving this one-off business message because your business email is publicly listed
       and our offer relates to your business. Reply "STOP" to unsubscribe; we will honour it immediately.
   QC:
-    # Désactivé tant que business.postal_address est vide (adresse postale obligatoire)
-    enabled: false
+    # Adresse postale obligatoire (CAN-SPAM / LCAP) : fournie via `ywiad set-address`
+    enabled: true
     name: "Québec"
     country_code: "CA"
     language: fr
@@ -117,10 +120,11 @@ markets:
       Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
       concerne votre activité. Répondez « STOP » pour vous désabonner ; ce sera pris en compte immédiatement.
   US:
-    # Désactivé tant que business.postal_address est vide (adresse postale obligatoire)
-    enabled: false
+    # Adresse postale obligatoire (CAN-SPAM / LCAP) : fournie via `ywiad set-address`
+    enabled: true
     name: "United States"
     priority_weight: 1.5
+    daily_cap: 10
     language: en
     currency: "$"
     currency_prefix: true
@@ -308,10 +312,10 @@ outreach:
   mode: queue
   # Plafond quotidien (premiers contacts + relances). Gmail perso : rester bas pour protéger la réputation.
   daily_send_limit: 25
-  # Part du quota gardée pour des marchés hors fenêtre au moment de l'exécution (ex. { NZ: 5 }).
-  # Inutile tant que la tournée AU/NZ passe en premier dans la journée UTC (00:10) ; chaque marché
-  # anglophone est plafonné par markets.<code>.daily_cap pour laisser de la place aux autres.
-  reserve: {}
+  # Part du quota gardée pour les marchés hors fenêtre au moment de l'exécution et qui ont des leads
+  # prêts : Amérique du Nord, envoyée à la tournée de l'après-midi (14:40 UTC = matin à New York).
+  # AU/NZ passent en premier dans la journée UTC (00:10) ; plafonds par marché : markets.<code>.daily_cap.
+  reserve: { US: 6, CA: 3, QC: 3 }
   # Heures locales du destinataire pendant lesquelles on envoie (jours ouvrés uniquement)
   send_window: [8, 18]
   # Jours d'envoi (0 = lundi … 6 = dimanche) : les commerçants travaillent le samedi

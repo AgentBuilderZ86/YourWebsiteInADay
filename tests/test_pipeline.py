@@ -42,6 +42,7 @@ def no_dns(monkeypatch):
 @pytest.fixture
 def cfg(tmp_path):
     c = load_config("config.example.yaml")
+    c["business"]["postal_address"] = ""  # jamais la vraie adresse (base locale) dans les tests
     c["paths"] = {k: str(tmp_path / k) for k in ("outbox", "mockups", "reports", "site")}
     c["paths"]["database"] = ":memory:"
     return c
@@ -110,6 +111,7 @@ def test_send_window_and_postal_address(cfg):
     assert not in_send_window(cfg, "US", PARIS_MORNING)
     assert not in_send_window(cfg, "FR", datetime(2026, 9, 27, 9, 0, tzinfo=timezone.utc))  # dimanche
     assert in_send_window(cfg, "FR", datetime(2026, 9, 26, 9, 0, tzinfo=timezone.utc))  # samedi : commerces ouverts
+    cfg["markets"]["US"]["enabled"] = False
     assert can_email_market(cfg, "US") == (False, "marché désactivé")
     cfg["markets"]["US"]["enabled"] = True
     assert can_email_market(cfg, "US") == (False, "adresse postale de l'expéditeur requise (business.postal_address)")
@@ -494,3 +496,16 @@ def test_english_markets_focus(cfg):
     noon_paris = datetime(2026, 9, 29, 10, 0, tzinfo=timezone.utc)  # 23 h à Auckland
     assert pipeline.reserved_budget(db, cfg, noon_paris) == 5
     assert pipeline.reserved_budget(db, cfg, datetime(2026, 9, 29, 0, 10, tzinfo=timezone.utc)) == 0
+
+
+def test_postal_address_private_and_only_where_required(cfg, monkeypatch):
+    from ywiad.config import load_config
+    monkeypatch.setenv("YWIAD_POSTAL_ADDRESS", "PO Box 1, Casablanca")
+    c = load_config("config.example.yaml")
+    c["paths"]["database"] = ":memory:"
+    assert c["business"]["postal_address"] == "PO Box 1, Casablanca"
+    lead = {"id": 1, "name": "Joe's Diner", "category": "restaurant", "market": "US", "city": "Austin",
+            "email": "joe@diner.com", "website": None, "score": 0, "issues": [], "extra": {}}
+    from ywiad.outreach import render_email
+    assert "PO Box 1" in render_email("initial", lead, c)[1]
+    assert "PO Box 1" not in render_email("initial", {**lead, "market": "FR"}, c)[1]

@@ -4,6 +4,6 @@ WhatsApp: {{ business.phone }}
 
 --
 {{ market.legal }}
-{% if business.postal_address %}
+{% if business.postal_address and market.requires_postal_address %}
 {{ business.name }}, {{ business.postal_address }}
 {% endif %}

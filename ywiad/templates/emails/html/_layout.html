@@ -48,7 +48,7 @@
         <!-- Pied -->
         <tr>
           <td class="px" style="padding:22px 16px 0; font-family:{{ f.sans }}; font-size:11px; line-height:17px; color:{{ c.faint }};">
-            {{ market.legal }}{% if business.postal_address %}<br>{{ business.name }}, {{ business.postal_address }}{% endif %}
+            {{ market.legal }}{% if business.postal_address and market.requires_postal_address %}<br>{{ business.name }}, {{ business.postal_address }}{% endif %}
           </td>
         </tr>
       </table>
