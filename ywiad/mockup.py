@@ -15,7 +15,7 @@ from typing import Any
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from .pricing import format_price, geo_offers, enabled_markets, market, pricing_table
+from .pricing import agency_benchmark, format_price, geo_offers, enabled_markets, market, pricing_table
 
 log = logging.getLogger("ywiad")
 
@@ -318,6 +318,9 @@ AUDIT_STRINGS = {
         "good_title": "Ce qui est déjà en place",
         "cta": "Toutes ces recommandations sont mises en place dans le cadre de la refonte de votre site. Votre maquette est déjà prête : répondez « OUI » et je la mets en ligne à votre nom. Vous ne réglez qu'une fois le site en ligne et validé.",
         "cta_geo": "Ce rapport liste ce que nous avons constaté. L'{label} ({price}, livré en {delivery}) va plus loin : pages clés, fiche Google, comparaison avec 3 concurrents locaux, cohérence de vos coordonnées sur le web et plan d'action priorisé, présenté en 30 min. Répondez « OUI » à mon email : vous ne réglez qu'à la livraison.",
+        "compare": "En agence, un tel audit se facture {audit} à lui seul. Ici, il vous est offert et ses recommandations sont incluses dans la refonte.",
+        "compare_tier": "Formule conseillée pour vous : {label}, {price}, livrée en {delivery} — contre {range} en agence{delay}.",
+        "credit": "Si vous refaites ensuite votre site avec nous, le prix de l'audit est intégralement déduit (commande sous {days} jours).",
         "cta_geo_multi": "Nous corrigeons ces points directement sur votre site : {options}. Votre score (aujourd'hui {score}/100) est remesuré après l'intervention, preuve à l'appui. Répondez « 1 » ou « 2 » à mon email : vous ne réglez qu'une fois le travail livré.",
         "see_mockup": "Voir ma maquette", "email": "Répondre par email",
         "footer": "Audit réalisé automatiquement à partir de votre page publique ; aucune donnée personnelle collectée.",
@@ -337,6 +340,9 @@ AUDIT_STRINGS = {
         "good_title": "Already in place",
         "cta": "All these recommendations are implemented as part of your website redesign. Your mock-up is ready: reply \"YES\" and I'll put it live under your name. You only pay once the site is live and approved.",
         "cta_geo": "This report lists what we found. The {label} ({price}, delivered in {delivery}) goes further: key pages, Google profile, benchmark against 3 local competitors, consistency of your details across the web and a prioritised action plan, walked through in 30 minutes. Reply \"YES\" to my email: you only pay on delivery.",
+        "compare": "Agencies bill {audit} for an audit like this on its own. Here it's free, and its recommendations are included in the redesign.",
+        "compare_tier": "Recommended for you: {label}, {price}, live in {delivery} — versus {range} at an agency{delay}.",
+        "credit": "If you then rebuild your website with us, the audit fee is fully deducted (order within {days} days).",
         "cta_geo_multi": "We fix these points directly on your website: {options}. Your score (currently {score}/100) is re-measured after the work, with proof. Reply \"1\" or \"2\" to my email: you only pay once the work is delivered.",
         "see_mockup": "See my mock-up", "email": "Reply by email",
         "footer": "Audit run automatically on your public page; no personal data collected.",
@@ -368,8 +374,21 @@ def render_audit(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | No
     passed = [t["passed"][g["code"]] for g in geo or [] if g.get("ok") and g["code"] in t["passed"]]
     score = geo_score(geo) if has_site else 0
     color = "#c92a2a" if (score or 0) < 40 else "#b7791f" if score < 70 else "#2f7d4f"
+    notes = []
+    m = market(cfg, lead.get("market"))
+    audit_value = (agency_benchmark(m, "audit") or {}).get("range")
+    if extra.get("offer") != "geo":
+        if audit_value:
+            notes.append(t["compare"].format(audit=audit_value))
+        tier = next((r for r in pricing_table(cfg, lead.get("market"), lead.get("recommended_tier")) if r["recommended"]), None)
+        if tier and tier["agency"]:
+            a = tier["agency"]
+            notes.append(t["compare_tier"].format(label=tier["short"], price=tier["price"], delivery=tier["delivery"], range=a["range"],
+                                                  delay=f" ({a['delay']})" if a.get("delay") else ""))
     if extra.get("offer") == "geo":
         offers = geo_offers(cfg, lead.get("market"), lang)
+        if len(offers) == 1 and cfg["pricing"].get("geo_credit_days"):
+            notes.append(t["credit"].format(days=cfg["pricing"]["geo_credit_days"]))
         if len(offers) > 1:
             t["cta"] = t["cta_geo_multi"].format(score=score, options=" ; ".join(
                 f"{i}. {o['label']} : {o['price']} ({o['delivery']})" for i, o in enumerate(offers, 1)))
@@ -379,7 +398,7 @@ def render_audit(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | No
         mockup_url = None
     return _env.get_template("mockups/audit.html").render(
         lang=lang, t=t, lead=lead, business=cfg["business"], today=today, geo_score=score, score_color=color,
-        findings=findings, site_issues=site_issues[:4], passed=passed, mockup_url=mockup_url)
+        findings=findings, site_issues=site_issues[:4], passed=passed, mockup_url=mockup_url, notes=notes)
 
 
 def write_mockup(lead: dict[str, Any], cfg: dict[str, Any]) -> tuple[str, str | None]:
@@ -401,7 +420,8 @@ def write_landing(cfg: dict[str, Any]) -> str:
     """Page d'accueil de l'offre, avec la grille tarifaire de chaque marché."""
     markets = [
         {"code": code, "name": market(cfg, code)["name"], "lang": market(cfg, code).get("language", "fr"),
-         "tiers": pricing_table(cfg, code)}
+         "tiers": pricing_table(cfg, code), "geo": geo_offers(cfg, code),
+         "fr": market(cfg, code).get("language") == "fr"}
         for code in enabled_markets(cfg)
     ]
     out = Path(cfg["paths"]["site"])

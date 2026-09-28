@@ -122,11 +122,13 @@
             <span style="font-size:15px; font-weight:600; color:{{ c.ink }};">{{ t.short }}</span>
             {% if t.recommended %}<span style="margin-left:8px; font-size:12px; font-weight:600; color:{{ c.accent }}; white-space:nowrap;">&#9733; {{ s.recommended }}</span>{% endif %}
             <br><span style="font-size:13px; line-height:20px; color:{{ c.muted }};">{{ t.label.split(' — ')[1] if ' — ' in t.label else '' }} · <span style="white-space:nowrap;">{{ s.delivery }} {{ t.delivery }}</span></span>
+            {% if t.agency %}<br><span style="font-size:12px; line-height:18px; color:{{ c.faint }};"><s>{{ s.agency.format(range=t.agency.range) }}{% if t.agency.delay %} · {{ t.agency.delay }}{% endif %}</s>{% if t.agency.saving %} &nbsp;<span style="color:{{ c.accent }}; font-weight:600; white-space:nowrap;">{{ s.saving.format(pct=t.agency.saving) }}</span>{% endif %}</span>{% endif %}
           </td>
           <td align="right" valign="middle" style="padding:14px 18px; font-family:{{ f.serif }}; font-size:20px; color:{{ c.ink }}; white-space:nowrap;">{{ t.price }}</td>
         </tr>
       </table>
       {% endfor %}
+      {% if audit_value %}<p style="margin:6px 0 0; font-family:{{ f.sans }}; font-size:13px; line-height:20px; color:{{ c.muted }};">{{ s.value_line.format(audit=audit_value) }}</p>{% endif %}
     </td>
   </tr>
 

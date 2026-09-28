@@ -5,7 +5,7 @@ Hi,
 Just following up about {{ lead.name }}'s website.{% if mockup_url %} Your free mock-up is still online here: {{ mockup_url }}{% endif %}
 
 
-{% if has_site or site_down %}The most urgent point: {{ hook }}.{% else %}A simple one-page site is often enough to start showing up in local Google searches.{% endif %} We can fix this in {{ recommended.delivery }} with our {{ recommended.short }} package ({{ recommended.price }}).
+{% if has_site or site_down %}The most urgent point: {{ hook }}.{% else %}A simple one-page site is often enough to start showing up in local Google searches.{% endif %} We can fix this in {{ recommended.delivery }} with our {{ recommended.short }} package ({{ recommended.price }}{% if recommended.agency %}, versus {{ recommended.agency.range }} at an agency{% endif %}).
 
 Just reply "YES" and I'll get it live — you only pay once the site is online and you've approved it.
 

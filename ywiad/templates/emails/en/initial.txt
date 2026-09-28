@@ -24,12 +24,20 @@ Your SEO & GEO audit (visibility on Google and in AI assistants like ChatGPT) is
 {{ audit_url }}
 
 {% endif %}
-Our turnkey packages (design, copy, launch, hosting and HTTPS included):
+Our packages: an agency-grade website, live in 24 hours to 7 days instead of several weeks. Turnkey (design, copy, launch, hosting and HTTPS included):
 
 {% for t in tiers %}
   {% if t.recommended %}→ {% else %}  {% endif %}{{ t.label }}: {{ t.price }} (live in {{ t.delivery }}){% if t.recommended %}  ← recommended for you{% endif %}
 
+{% if t.agency %}
+     agency price: {{ t.agency.range }}{% if t.agency.delay %}, {{ t.agency.delay }}{% endif %}{% if t.agency.saving %} (≈ {{ t.agency.saving }}% less){% endif %}
+
+{% endif %}
 {% endfor %}
+{% if audit_value %}
+
+Business and Premium include the full SEO & GEO audit and its implementation, which agencies bill {{ audit_value }} on its own.
+{% endif %}
 
 If you like it, just reply "YES" to this email: I'll tailor it to your business and put it live under your name. You only pay once the site is live and you've approved it.
 

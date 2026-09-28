@@ -25,6 +25,25 @@ def format_price(amount: int | float, m: dict[str, Any]) -> str:
     return f"{cur}{n}" if m.get("currency_prefix") else f"{n} {cur}"
 
 
+def agency_benchmark(m: dict[str, Any], key: str, amount: int | float | None = None) -> dict[str, Any] | None:
+    """Fourchette d'une agence pour la même prestation (markets.<code>.benchmarks), et l'économie
+    par rapport au milieu de la fourchette (affichée seulement si elle dépasse 15 %)."""
+    b = (m.get("benchmarks") or {}).get(key)
+    if not b:
+        return None
+    low, high = b[0], b[1]
+    sep = " à " if m.get("language") == "fr" else " to "
+    if m.get("currency_prefix"):
+        rng = f"{format_price(low, m)}{sep}{format_price(high, m)}"
+    else:
+        rng = f"{format_price(low, m).rsplit(' ', 1)[0]}{sep}{format_price(high, m)}"
+    saving = None
+    if amount:
+        pct = round((1 - amount / ((low + high) / 2)) * 100)
+        saving = pct if pct >= 15 else None
+    return {"range": rng, "low": low, "high": high, "delay": b[2] if len(b) > 2 else None, "saving": saving}
+
+
 def recommend_tier(cfg: dict[str, Any], category: str | None, score: int, has_site: bool) -> str:
     """Offre de base selon le métier, ajustée selon l'état du site.
 
@@ -58,6 +77,7 @@ def pricing_table(cfg: dict[str, Any], market_code: str | None, recommended: str
             "delivery": t["delivery"][lang],
             "features": t["features"][lang],
             "recommended": key == recommended,
+            "agency": agency_benchmark(m, key, m["prices"][key]),
         })
     return rows
 
@@ -93,5 +113,6 @@ def geo_offers(cfg: dict[str, Any], market_code: str | None, lang: str | None = 
         if not spec or amount is None:
             continue
         out.append({"key": key, "label": spec["label"][lang], "delivery": spec["delivery"][lang],
-                    "features": spec["features"][lang], "price": format_price(amount, m), "amount": amount})
+                    "features": spec["features"][lang], "price": format_price(amount, m), "amount": amount,
+                    "agency": agency_benchmark(m, "audit", amount)})
     return out

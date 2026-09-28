@@ -20,6 +20,9 @@ Two ways to fix it; we work directly on your website:
   {{ loop.index }}. {{ o.label }}: {{ o.price }} (delivered in {{ o.delivery }}) — {{ o.features[0] }}.
 {% endfor %}
 
+{% if geo_offers[0].agency %}For comparison, agencies charge {{ geo_offers[0].agency.range }} for the SEO audit alone, with nothing implemented.
+
+{% endif %}
 Either way, your SEO & GEO score (currently {{ geo_score }}/100) is re-measured after the work: you see the gain, with proof.
 
 Reply "1" or "2" and I'll take care of it. You only pay once the work is delivered.
@@ -28,6 +31,10 @@ To go further, our {{ geo_offer.label }} ({{ geo_offer.price }}, delivered in {{
 {% for x in geo_offer.features %}
   – {{ x }}
 {% endfor %}
+
+{% if geo_offer.agency %}Agencies typically charge {{ geo_offer.agency.range }} for a GEO audit.
+{% endif %}
+And if you then decide to rebuild your website with us, the {{ geo_offer.price }} is fully deducted (order within {{ geo_credit_days }} days).
 
 Just reply "YES" and I'll start it. You only pay when the report is delivered.
 {% endif %}

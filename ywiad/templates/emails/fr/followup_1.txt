@@ -5,7 +5,7 @@ Bonjour,
 Je me permets de revenir vers vous au sujet du site {{ de_name }}.{% if mockup_url %} La maquette est toujours en ligne ici : {{ mockup_url }}{% endif %}
 
 
-{% if has_site or site_down %}Le point le plus urgent : {{ hook }}.{% else %}Un simple site vitrine suffit souvent à apparaître dans les recherches Google locales.{% endif %} C'est réglé en {{ recommended.delivery }} avec notre offre {{ recommended.short }} ({{ recommended.price }}).
+{% if has_site or site_down %}Le point le plus urgent : {{ hook }}.{% else %}Un simple site vitrine suffit souvent à apparaître dans les recherches Google locales.{% endif %} C'est réglé en {{ recommended.delivery }} avec notre offre {{ recommended.short }} ({{ recommended.price }}{% if recommended.agency %}, contre {{ recommended.agency.range }} en agence{% if recommended.agency.delay %} et {{ recommended.agency.delay }} d'attente{% endif %}{% endif %}).
 
 Un simple « OUI » en réponse et je lance la mise en ligne — vous ne réglez qu'une fois le site en ligne et validé.
 

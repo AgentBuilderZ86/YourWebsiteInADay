@@ -61,16 +61,22 @@ scripts/state.sh pull
     conseillée et son prix, annoncer la mise en ligne sous le délai de l'offre dès validation, demander
     les 3 éléments utiles (logo ou photo, horaires, numéro à afficher) et proposer WhatsApp
     (+212 6 62 45 81 51) pour aller plus vite ; puis email « [CLOSING] » à AZ.
-  - Question de prix / « trop cher » : rappeler l'offre Basique (la moins chère du marché), que le
-    paiement n'intervient qu'une fois le site en ligne et validé, et que la maquette est déjà prête.
-    Jamais de remise inventée : une remise se décide avec AZ (email « [CLOSING] » avec la demande).
+  - Question de prix / « trop cher » : répondre par la comparaison agence (`ywiad pricing --market <code>` ;
+    fourchettes sourcées dans `markets.<code>.benchmarks`) : même livrable, 24 h à 7 jours au lieu de
+    2 à 5 semaines, audit SEO & GEO inclus (facturé à part en agence), maquette déjà prête, paiement une
+    fois le site en ligne et validé. Puis proposer l'offre du dessous (Standard → Basique) plutôt qu'une
+    remise. Jamais de remise inventée : une remise se décide avec AZ (email « [CLOSING] » avec la demande).
+  - Grille (sept. 2026) : FR/BE 790 / 1 990 / 4 900 € ; MA 3 990 / 9 900 / 19 900 MAD ; AU 1 290 / 2 990 /
+    6 900 AUD ; AE 2 900 / 6 900 / 16 900 AED. Ne citer que ces prix ; les chiffres agence uniquement
+    tels qu'ils figurent dans la config (sources en commentaire).
   - Demande de modification de la maquette : la faire (textes, couleurs, photos fournies), republier
     `ywiad site` + déploiement, renvoyer le lien dans le fil le jour même.
   - Toujours : réponse courte, dans sa langue, un seul appel à l'action, signature AZ + WhatsApp.
   - Offre « Audit GEO » seule (leads `extra.offer = geo` : site correct, note GEO < 50) : sur un « OUI »,
     confirmer l'Audit GEO complet au prix du marché (`markets.<code>.prices.geo`, livré en 48 h, réglé à la
     livraison), demander l'accès à la fiche Google si possible, puis « [CLOSING] <commerce> — Audit GEO —
-    <prix> » à AZ. Si le prospect veut aussi refaire son site : proposer la formule conseillée.
+    <prix> » à AZ. Si le prospect veut aussi refaire son site : proposer la formule conseillée, le prix de
+    l'audit étant intégralement déduit si la refonte est commandée sous 30 jours (`pricing.geo_credit_days`).
   - Maroc (`geo_offers`) : « 1 » = Correctifs GEO prioritaires (990 MAD, 72 h), « 2 » = Optimisation GEO
     complète (1 490 MAD, 7 jours). Sur réponse : confirmer l'offre, demander l'accès au site (CMS/FTP) ou
     le contact du prestataire, noter le score de départ (`ywiad audit-url <site>`), puis « [CLOSING] ».

@@ -13,7 +13,7 @@ from markupsafe import Markup, escape
 
 from .discover import social_platform
 from .audit import geo_findings, geo_score, issue_label
-from .pricing import format_price, geo_offers, market, pricing_table
+from .pricing import agency_benchmark, format_price, geo_offers, market, pricing_table
 
 _env = Environment(loader=PackageLoader("ywiad", "templates"), autoescape=False,
                    trim_blocks=True, lstrip_blocks=True, keep_trailing_newline=True)
@@ -49,7 +49,12 @@ STRINGS = {
         "mockup_cta": "Voir la maquette",
         "preview_alt": "Aperçu du futur site de",
         "plans_title": "Nos formules",
-        "plans_text": "Clé en main : design, textes, mise en ligne, hébergement et HTTPS compris.",
+        "plans_text": "Le travail d'une agence web, livré en 24 h à 7 jours au lieu de plusieurs semaines. Clé en main : design, textes, mise en ligne, hébergement et HTTPS compris.",
+        "agency": "En agence : {range}",
+        "agency_delay": "{delay}",
+        "saving": "≈ {pct} % de moins",
+        "value_line": "Standard et Premium incluent l'audit SEO & GEO complet et sa mise en œuvre, facturé {audit} en agence à lui seul.",
+        "geo_credit": "Si vous refaites ensuite votre site avec nous, le prix de l'audit est intégralement déduit (commande sous {days} jours).",
         "recommended": "Conseillé pour vous",
         "delivery": "livré en",
         "closing": "Si le rendu vous plaît, répondez simplement « OUI » à cet email : je l'adapte à votre activité et je le mets en ligne à votre nom. Vous ne réglez qu'une fois le site en ligne et validé par vous.",
@@ -82,7 +87,12 @@ STRINGS = {
         "mockup_cta": "View the mock-up",
         "preview_alt": "Preview of the new website for",
         "plans_title": "Our packages",
-        "plans_text": "Turnkey: design, copy, launch, hosting and HTTPS included.",
+        "plans_text": "An agency-grade website, live in 24 hours to 7 days instead of several weeks. Turnkey: design, copy, launch, hosting and HTTPS included.",
+        "agency": "Agency price: {range}",
+        "agency_delay": "{delay}",
+        "saving": "≈ {pct}% less",
+        "value_line": "Business and Premium include the full SEO & GEO audit and its implementation, which agencies bill {audit} on its own.",
+        "geo_credit": "If you then rebuild your website with us, the audit fee is fully deducted (order within {days} days).",
         "recommended": "Recommended for you",
         "delivery": "live in",
         "closing": "If you like it, just reply \"YES\" to this email: I'll tailor it to your business and put it live under your name. You only pay once the site is live and you've approved it.",
@@ -202,6 +212,9 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
         "hook": next((hooks[c] for c in codes if c in hooks), hooks["_"]),
         "tiers": tiers,
         "recommended": recommended,
+        "audit_value": (agency_benchmark(m, "audit") or {}).get("range"),
+        "geo_credit_days": cfg["pricing"].get("geo_credit_days"),
+        "s": s,
         "mockup_url": mockup_url,
         "category_label": cat.get(lang) or ("commerce" if lang == "fr" else "business"),
     }

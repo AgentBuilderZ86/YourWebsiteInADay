@@ -198,7 +198,7 @@ def test_full_pipeline_queue_mode(cfg):
     queued = db.messages("queued")
     assert len(queued) == 1 and queued[0]["to_addr"] == "contact@boutique-test.fr"
     assert "https://yourwebsiteinaday.netlify.app/demo/boutique-bad-1/" in queued[0]["body"]
-    assert "1 290 €" in queued[0]["body"] and "L34-5" in queued[0]["body"]
+    assert "1 990 €" in queued[0]["body"] and "L34-5" in queued[0]["body"]
     assert db.get_lead(1)["status"] == "qualified"  # pas encore envoyé
 
     # Pas de doublon tant que le message est en file
@@ -240,8 +240,8 @@ def test_email_rendering_english_no_site(cfg):
     assert subject == "Bloom & Co: your customers are looking for you online"
     assert "couldn't find a website" in body and "https://x/y/" in body and "recommended for you" in body
     assert "No website: customers" not in body  # pas de puce redondante
-    assert "1,990 AUD" in body and "Reply \"STOP\"" in body
-    assert "790 AUD" in render_whatsapp(lead, cfg)
+    assert "2,990 AUD" in body and "Reply \"STOP\"" in body
+    assert "1,290 AUD" in render_whatsapp(lead, cfg)
 
 
 def test_email_rendering_site_down_fr(cfg):
@@ -252,7 +252,7 @@ def test_email_rendering_site_down_fr(cfg):
     assert subject == "Garage Atlas : votre site est inaccessible"
     assert "ne s'affiche plus" in body and "aucun site web" not in body
     assert "erreur 503" in body
-    assert "2 990 MAD" in body and "09-08" in body
+    assert "3 990 MAD" in body and "09-08" in body
 
 
 def test_placeholder_and_garbage_emails_rejected():
@@ -308,7 +308,7 @@ def test_html_email_initial(cfg):
     assert mockup_spec(lead, cfg)["tagline"] in html  # même accroche que la maquette web
     assert "INSTITUT" not in html  # majuscules via CSS
     assert "background:" not in html and 'bgcolor="#1a1614"' in html
-    assert "Conseillé pour vous" in html and "1 290 €" in html and "L34-5" in html
+    assert "Conseillé pour vous" in html and "1 990 €" in html and "L34-5" in html
     assert len(html.encode()) < 60_000  # Gmail tronque au-delà de ~102 Ko
 
 
@@ -463,3 +463,14 @@ def test_good_site_with_weak_geo_gets_geo_offer(cfg):
         GOOD_SITE, final_url=url, load_seconds=0.8, page_bytes=50_000, https_ok=True, ssl_valid=True))
     lead = db.leads("qualified")[0]
     assert stats["qualified"] == 1 and lead["extra"]["offer"] == "geo" and lead["recommended_tier"] == "geo"
+
+
+def test_agency_benchmark_in_offer(cfg):
+    from ywiad.pricing import agency_benchmark, geo_offers, market
+    fr = market(cfg, "FR")
+    a = agency_benchmark(fr, "standard", fr["prices"]["standard"])
+    assert a["range"] == "2 000 à 6 000 €" and a["delay"] == "2 à 5 semaines" and a["saving"] == 50
+    assert agency_benchmark(fr, "standard", 3900)["saving"] is None  # écart < 15 % : pas affiché
+    assert agency_benchmark(market(cfg, "US"), "standard") is None
+    geo = geo_offers(cfg, "FR")[0]
+    assert geo["price"] == "149 €" and geo["agency"]["range"] == "1 500 à 3 000 €"

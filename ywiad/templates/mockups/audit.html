@@ -34,6 +34,7 @@ ol li::before { content:counter(f); position:absolute; left:0; top:16px; width:2
 ul.ok { padding-left:18px; color:var(--muted); font-size:15px; margin:0; }
 .cta { background:var(--ink); color:var(--bg); border-radius:18px; padding:24px; margin-top:32px; }
 .cta p { margin:0 0 16px; }
+.cta p.note { font-size:14px; opacity:.8; margin-top:-6px; }
 .btn { display:inline-block; padding:13px 22px; border-radius:999px; background:var(--bg); color:var(--ink); text-decoration:none; font-weight:600; margin:0 8px 8px 0; }
 .btn.ghost { background:transparent; color:var(--bg); border:1px solid rgba(255,255,255,.35); }
 footer { color:var(--muted); font-size:13px; margin-top:28px; }
@@ -75,6 +76,7 @@ footer { color:var(--muted); font-size:13px; margin-top:28px; }
 
   <div class="cta">
     <p>{{ t.cta }}</p>
+    {% for n in notes %}<p class="note">{{ n }}</p>{% endfor %}
     {% if mockup_url %}<a class="btn" href="{{ mockup_url }}">{{ t.see_mockup }}</a>{% endif %}
     <a class="btn ghost" href="https://wa.me/{{ business.whatsapp }}">WhatsApp</a>
     <a class="btn ghost" href="mailto:{{ business.sender_email }}?subject={{ lead.name|urlencode }}">{{ t.email }}</a>

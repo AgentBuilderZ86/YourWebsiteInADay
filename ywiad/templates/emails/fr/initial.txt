@@ -24,12 +24,20 @@ Votre audit SEO & GEO (visibilité sur Google et dans les assistants IA comme Ch
 {{ audit_url }}
 
 {% endif %}
-Nos formules, clé en main (design, textes, mise en ligne, hébergement et HTTPS compris) :
+Nos formules : le travail d'une agence web, livré en 24 h à 7 jours au lieu de plusieurs semaines. Clé en main (design, textes, mise en ligne, hébergement et HTTPS compris) :
 
 {% for t in tiers %}
   {% if t.recommended %}→ {% else %}  {% endif %}{{ t.label }} : {{ t.price }} (livré en {{ t.delivery }}){% if t.recommended %}  ← conseillé pour vous{% endif %}
 
+{% if t.agency %}
+     en agence : {{ t.agency.range }}{% if t.agency.delay %}, {{ t.agency.delay }}{% endif %}{% if t.agency.saving %} — soit ≈ {{ t.agency.saving }} % de moins{% endif %}
+
+{% endif %}
 {% endfor %}
+{% if audit_value %}
+
+Standard et Premium incluent l'audit SEO & GEO complet et sa mise en œuvre, facturé {{ audit_value }} en agence à lui seul.
+{% endif %}
 
 Si le rendu vous plaît, répondez simplement « OUI » à cet email : je l'adapte à votre activité et je le mets en ligne à votre nom. Vous ne réglez qu'une fois le site en ligne et validé par vous.
 
