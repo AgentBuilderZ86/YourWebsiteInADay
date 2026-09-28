@@ -383,3 +383,34 @@ def test_directory_listing_is_not_a_site():
                      page_bytes=500, https_ok=True, ssl_valid=True)
     assert [i.code for i in r.issues] == ["listing"]
     assert not r.reachable
+
+
+def test_social_platform_detection():
+    from ywiad.discover import social_platform
+    assert social_platform({"social": "https://www.facebook.com/monresto"}) == "Facebook"
+    assert social_platform({"social": "https://www.planity.com/salon-x"}) == "Planity"
+    assert social_platform({"facebook": "monresto"}) == "Facebook"
+    assert social_platform({}) is None
+
+
+def test_social_only_email_names_the_platform():
+    from ywiad.config import load_config
+    from ywiad.outreach import render_email, render_email_html
+    cfg = load_config()
+    lead = {"id": 1, "name": "Chez Lulu", "category": "restaurant", "market": "FR", "city": "Lyon",
+            "website": None, "email": "lulu@example.fr", "score": 0, "recommended_tier": "standard",
+            "issues": [{"code": "no_site", "penalty": 100, "params": {}}],
+            "extra": {"social": "https://www.facebook.com/chezlulu"}}
+    subject, body = render_email("initial", lead, cfg, mockup_url="https://x/demo/")
+    assert "sur Facebook, mais pas de site à votre nom" in body
+    html = render_email_html("initial", lead, cfg, mockup_url="https://x/demo/")
+    assert "Pas de site à votre nom" in html and "votre page Facebook" in html
+
+
+def test_old_copyright_weighs_more():
+    from datetime import date
+    old = OLD_SITE if "©" in OLD_SITE else OLD_SITE.replace("</body>", f"<footer>© {date.today().year - 8}</footer></body>")
+    r = analyze_html(old, final_url="http://boutique-test.fr", load_seconds=1.0,
+                     page_bytes=50_000, https_ok=True, ssl_valid=True)
+    stale = [i for i in r.issues if i.code == "stale"]
+    assert stale and stale[0].penalty == 20

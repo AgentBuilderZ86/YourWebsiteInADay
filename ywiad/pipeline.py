@@ -11,7 +11,7 @@ from typing import Any, Callable, Iterable
 
 from .audit import FREE_MAIL, audit_url, best_emails, issue_dict
 from .db import DB, now_iso
-from .discover import discover, import_csv, next_combos
+from .discover import discover, import_csv, next_combos, social_platform
 from .mailer import Mailer, fetch_replies
 from .mockup import mockup_slug, preview_path, render_previews, write_landing, write_mockup
 from .outreach import is_optout_reply, next_followup, render_email, render_email_html, render_whatsapp
@@ -64,12 +64,17 @@ def website_from_email(lead: dict[str, Any]) -> str | None:
     return None if domain in FREE_MAIL else f"https://{domain}"
 
 
-def priority(cfg: dict[str, Any], lead: dict[str, Any], score: int) -> float:
+def priority(cfg: dict[str, Any], lead: dict[str, Any], score: int, issues: list[Any] | None = None) -> float:
     """Plus c'est haut, plus le lead est prometteur : site mauvais × valeur du métier × joignabilité."""
     cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {})
     p = (100 - score) * cat.get("value", 1.0)
+    codes = {getattr(i, "code", None) or (i.get("code") if isinstance(i, dict) else None) for i in issues or []}
     if lead.get("website"):
         p *= 1.2   # un commerçant qui a déjà payé un site est plus facile à convaincre
+        if {"stale", "not_mobile"} <= codes:
+            p *= 1.2   # site ancien ET illisible sur téléphone : refonte évidente
+    elif social_platform(lead.get("extra")):
+        p *= 1.15  # déjà actif en ligne (Facebook, TheFork, Planity…) : sensible au sujet
     if lead.get("extra", {}).get("opening_hours"):
         p *= 1.05  # fiche entretenue : commerce actif
     return round(p, 1)
@@ -106,7 +111,7 @@ def step_audit(db: DB, cfg: dict[str, Any], auditor: Callable[..., Any] = audit_
             score=result.score,
             issues=[issue_dict(i) for i in result.issues],
             email=email,
-            priority=priority(cfg, lead, result.score),
+            priority=priority(cfg, lead, result.score, result.issues),
             extra=_extra_with_content(lead, result),
             recommended_tier=recommend_tier(cfg, lead.get("category"), result.score, result.reachable),
             status=status,

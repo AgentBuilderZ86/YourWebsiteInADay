@@ -283,7 +283,8 @@ def analyze_html(html: str, *, final_url: str, load_seconds: float, page_bytes: 
         add("no_cta", 5)
     years = [int(y) for y in re.findall(r"(?:©|&copy;|copyright)\s*(?:\d{4}\s*[-–]\s*)?((?:19|20)\d{2})", text_lower)]
     if years and max(years) <= today.year - 3:
-        add("stale", 10, year=max(years))
+        # « © 2017 » en pied de page : plus c'est ancien, plus le site est probablement abandonné
+        add("stale", 20 if max(years) <= today.year - 5 else 10, year=max(years))
 
     emails = extract_emails(html)
     score = max(0, 100 - sum(i.penalty for i in issues))

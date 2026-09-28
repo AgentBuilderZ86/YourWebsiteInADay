@@ -11,6 +11,7 @@ from urllib.parse import urlparse
 from jinja2 import Environment, PackageLoader, select_autoescape
 from markupsafe import Markup, escape
 
+from .discover import social_platform
 from .audit import issue_label
 from .pricing import market, pricing_table
 
@@ -31,10 +32,11 @@ STRINGS = {
         "tagline": "Studio web · sites livrés en 24 h",
         "intro_site": "J'ai découvert le site {de_name} en cherchant un {cat} à {city}. Je conçois des sites pour les commerces indépendants, alors j'ai pris quelques minutes pour l'analyser : voici ce qu'un client voit en arrivant — et ce qui le fait souvent repartir.",
         "intro_down": "En cherchant un {cat} à {city}, j'ai voulu consulter le site {de_name} ({host})… mais il ne s'affiche plus. Chaque client qui tombe sur une erreur part chez un concurrent, et Google finit par retirer le site de ses résultats.",
+        "intro_social": "En cherchant un {cat} à {city}, j'ai trouvé {name} sur {platform}, mais pas de site à votre nom. Une page {platform} ne remplace pas un site : elle remonte mal quand un client tape « {cat} {city} » sur Google, et vous n'en maîtrisez ni la présentation ni les règles.",
         "intro_none": "En cherchant un {cat} à {city}, j'ai trouvé {name}, mais aucun site web. Aujourd'hui, la plupart des clients vérifient horaires, adresse et avis en ligne avant de se déplacer — sans site, ils choisissent souvent un concurrent.",
         "audit_label": "Audit express",
         "verdicts": ("Critique", "À refaire", "À moderniser"),
-        "problem": {"no_site": "Aucun site web trouvé", "expired": "Votre site a disparu d'internet",
+        "problem": {"social_only": "Pas de site à votre nom", "no_site": "Aucun site web trouvé", "expired": "Votre site a disparu d'internet",
                     "parked": "Votre site a disparu d'internet", "listing": "Votre site ne s'affiche plus", "down": "Votre site ne s'affiche plus"},
         "mockup_kicker": "Votre maquette",
         "mockup_title": "Votre nouveau site est déjà prêt",
@@ -48,6 +50,9 @@ STRINGS = {
         "closing": "Si le rendu vous plaît, je vous propose un échange de 10 minutes cette semaine pour l'adapter à votre activité. Il suffit de répondre à cet email.",
         "preheader_site": "Votre site obtient {score}/100 — une maquette de votre nouveau site vous attend.",
         "preheader_none": "Une maquette de votre futur site vous attend, gratuitement.",
+        "social_text": "En ligne, on ne trouve que votre page {platform} : pas d'adresse à votre nom à donner, pas de page qui ressorte sur Google, et des clients qui ne voient ni vos services ni un moyen simple de réserver.",
+        "no_site_phrase": "J'ai vu que {name} n'a pas encore de site web.",
+        "social_phrase": "J'ai vu que {name} n'a pas de site à son nom, seulement une page {platform}.",
         "no_site_text": "Sur Google, vos clients ne trouvent ni vos horaires, ni vos services, ni un moyen simple de vous contacter ou de réserver.",
     },
     "en": {
@@ -55,10 +60,11 @@ STRINGS = {
         "tagline": "Web studio · websites live in 24 hours",
         "intro_site": "I came across {name}'s website while looking for a {cat} in {city}. I design websites for independent businesses, so I took a few minutes to review it: here's what a customer sees when they land — and what often makes them leave.",
         "intro_down": "While looking for a {cat} in {city}, I tried to visit {name}'s website ({host})… but it no longer loads. Every customer who hits an error goes to a competitor, and Google eventually drops the site from its results.",
+        "intro_social": "While looking for a {cat} in {city}, I found {name} on {platform}, but no website of your own. A {platform} page is no substitute for a website: it ranks poorly when customers search \"{cat} {city}\" on Google, and you control neither its look nor its rules.",
         "intro_none": "While looking for a {cat} in {city}, I found {name} but no website. Most customers now check opening hours, location and reviews online before visiting — without a site, many pick a competitor.",
         "audit_label": "Quick audit",
         "verdicts": ("Critical", "Needs a rebuild", "Needs updating"),
-        "problem": {"no_site": "No website found", "expired": "Your website has vanished",
+        "problem": {"social_only": "No website of your own", "no_site": "No website found", "expired": "Your website has vanished",
                     "parked": "Your website has vanished", "listing": "Your website no longer loads", "down": "Your website no longer loads"},
         "mockup_kicker": "Your mock-up",
         "mockup_title": "Your new website is already built",
@@ -72,6 +78,9 @@ STRINGS = {
         "closing": "If you like it, let's have a 10-minute chat this week to tailor it to your business. Just reply to this email.",
         "preheader_site": "Your website scores {score}/100 — a mock-up of your new site is waiting.",
         "preheader_none": "A free mock-up of your future website is waiting for you.",
+        "social_text": "Online there's only your {platform} page: no address of your own to share, nothing that ranks on Google, and customers can't see your services or an easy way to book.",
+        "no_site_phrase": "I noticed {name} doesn't have a website yet.",
+        "social_phrase": "I noticed {name} has no website of its own, only a {platform} page.",
         "no_site_text": "On Google, customers can't find your hours, your services, or an easy way to contact you or book.",
     },
 }
@@ -139,9 +148,14 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
     host = urlparse(lead["website"]).netloc.removeprefix("www.") if lead.get("website") else ""
     fmt = {"name": lead["name"], "de_name": de_name(lead["name"]), "cat": cat.get(lang) or ("commerce" if lang == "fr" else "business"),
            "city": lead.get("city") or ("votre ville" if lang == "fr" else "your area"), "host": host}
-    intro = s["intro_site" if has_site else "intro_down" if site_down else "intro_none"].format(**fmt)
+    platform = None if lead.get("website") else social_platform(lead.get("extra"))
+    fmt["platform"] = platform or ""
+    intro = s["intro_site" if has_site else "intro_down" if site_down else "intro_social" if platform else "intro_none"].format(**fmt)
+    no_site_sentence = s["social_phrase" if platform else "no_site_phrase"].format(**fmt)
     return {
         "intro": intro,
+        "platform": platform,
+        "no_site_sentence": no_site_sentence,
         "de_name": de_name(lead["name"]),
         "host": host,
         "lang": lang,
@@ -219,6 +233,9 @@ def render_email_html(kind: str, lead: dict[str, Any], cfg: dict[str, Any], *, m
         ctx["verdict"] = s["verdicts"][0 if score < 30 else 1 if score < 50 else 2]
         codes = [i["code"] for i in ctx["issues"]]
         ctx["headline_problem"] = next((s["problem"][c] for c in codes if c in s["problem"]), s["problem"]["no_site"])
+        if ctx["platform"]:
+            ctx["headline_problem"] = s["problem"]["social_only"]
+        ctx["no_site_text"] = s["social_text"].format(platform=ctx["platform"]) if ctx["platform"] else s["no_site_text"]
         ctx["preheader"] = (s["preheader_site"].format(score=score) if ctx["has_site"] else s["preheader_none"])
         return harden_backgrounds(_html_env.get_template("emails/html/initial.html").render(**ctx))
     # Relances : le texte (volontairement personnel) mis en page, sans la signature texte

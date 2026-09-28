@@ -39,6 +39,32 @@ def normalize_url(url: str | None) -> str | None:
     return url.rstrip("/")
 
 
+PLATFORM_LABELS = (
+    ("facebook.", "Facebook"), ("fb.com", "Facebook"), ("instagram.", "Instagram"), ("tiktok.", "TikTok"),
+    ("thefork.", "TheFork"), ("lafourchette.", "TheFork"), ("planity.", "Planity"), ("pagesjaunes.", "PagesJaunes"),
+    ("tripadvisor.", "Tripadvisor"), ("treatwell.", "Treatwell"), ("doctolib.", "Doctolib"), ("booking.com", "Booking"),
+    ("yelp.", "Yelp"), ("linktr.ee", "Linktree"), ("ubereats.", "Uber Eats"), ("deliveroo.", "Deliveroo"),
+    ("glovoapp.", "Glovo"), ("linkedin.", "LinkedIn"),
+)
+
+
+def social_platform(extra: dict[str, Any] | None) -> str | None:
+    """Plateforme (Facebook, TheFork, Planity…) qui tient lieu de site au commerce, si on en connaît une."""
+    extra = extra or {}
+    for value in (extra.get("social"), extra.get("facebook"), extra.get("instagram")):
+        if not value:
+            continue
+        v = str(value).lower()
+        for needle, label in PLATFORM_LABELS:
+            if needle in v:
+                return label
+        if value is extra.get("facebook"):
+            return "Facebook"
+        if value is extra.get("instagram"):
+            return "Instagram"
+    return None
+
+
 def _is_social(url: str | None) -> bool:
     """Une page Facebook, un annuaire ou une plateforme de réservation n'est pas un site propre."""
     return bool(url) and any(d in url.lower() for d in SOCIAL_DOMAINS)
@@ -147,7 +173,8 @@ def parse_overpass(payload: dict[str, Any], category: str, city: str, market: st
             "address": address or None,
             "city": tags.get("addr:city") or city,
             "extra": {
-                k: tags[k] for k in ("opening_hours", "cuisine", "facebook", "instagram", "stars") if k in tags
+                k.removeprefix("contact:"): tags[k] for k in ("opening_hours", "cuisine", "facebook", "instagram", "stars",
+                                               "contact:facebook", "contact:instagram") if k in tags
             },
         })
 
