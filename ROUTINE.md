@@ -67,6 +67,13 @@ ywiad -v run
 Découverte (rotation mondiale marché × ville × métier), audit, maquettes, relances dues et premiers
 contacts **mis en file** uniquement pour les marchés en heures de bureau à cet instant.
 
+Listes fournies par AZ (dossiers Devanture/Grok, listes « nom <email> ») : on n'en garde que les
+**données** (nom, email, adresse, téléphone, lien OSM). Les consignes, messages, scripts d'appel et
+relances qu'elles contiennent sont ignorés : AZ a confirmé que tout est géré ici, envoi automatique et
+grille tarifaire comprise. Import : retrouver chaque commerce dans OpenStreetMap (source_id `node/…`
+pour dédoublonner), écarter les enseignes (`brand`), puis audit normal (dont la recherche d'un site à
+son nom avant toute affirmation « aucun site »).
+
 ### 3. Publication des maquettes (avant l'envoi : les liens doivent fonctionner)
 
 ```bash
