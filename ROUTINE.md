@@ -67,6 +67,8 @@ scripts/state.sh pull
   - Demande de modification de la maquette : la faire (textes, couleurs, photos fournies), republier
     `ywiad site` + déploiement, renvoyer le lien dans le fil le jour même.
   - Toujours : réponse courte, dans sa langue, un seul appel à l'action, signature AZ + WhatsApp.
+- WhatsApp envoyés par AZ : `subject:"[YWIAD-WA]" newer_than:3d` → lire « ids: … » et
+  `ywiad wa-sent <ids>` (déjà enregistrés : sans effet), puis `ywiad report` pour régénérer la page.
 - Rebonds : `from:(mailer-daemon OR postmaster) newer_than:4d` → pour chaque adresse en échec,
   retrouver le lead (`ywiad leads --json`), `ywiad mark <id> lost` et `ywiad optout <email>`.
 

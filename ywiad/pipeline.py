@@ -406,6 +406,19 @@ def _intl_phone(phone: str | None, prefix: str) -> str | None:
     return d if d.startswith(prefix) and len(d) >= 11 else None
 
 
+def mark_whatsapp_sent(db: DB, lead_id: int) -> str:
+    """AZ a envoyé le WhatsApp préparé : on le date (suivi, relance manuelle à J+3 dans le rapport)."""
+    lead = db.get_lead(lead_id)
+    if not lead:
+        return f"#{lead_id} introuvable"
+    extra = {**(lead.get("extra") or {}), "wa_sent_at": date.today().isoformat()}
+    db.update_lead(lead_id, extra=extra)
+    db.conn.execute("UPDATE messages SET status='sent', sent_at=? WHERE lead_id=? AND channel='whatsapp' AND status='draft'",
+                    (date.today().isoformat(), lead_id))
+    db.conn.commit()
+    return f"#{lead_id} {lead['name']} : WhatsApp envoyé le {extra['wa_sent_at']}"
+
+
 def whatsapp_page(db: DB, cfg: dict[str, Any]) -> str:
     """Page à ouvrir sur téléphone : un bouton WhatsApp pré-rempli par commerce marocain sans email
     (mobiles d'abord, par priorité), et un bouton d'appel pour les fixes. Coché = mémorisé sur l'appareil."""
@@ -427,7 +440,8 @@ def whatsapp_page(db: DB, cfg: dict[str, Any]) -> str:
         cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {}).get("fr", "")
         action = (f'<a class="btn wa" href="https://wa.me/{num}?text={quote(msg)}">WhatsApp</a>' if mobile
                   else f'<a class="btn tel" href="tel:+{num}">Appeler (fixe)</a>')
-        items.append(f'''<li id="l{lead["id"]}"><label><input type="checkbox" data-id="{lead["id"]}">
+        sent = (lead.get("extra") or {}).get("wa_sent_at")
+        items.append(f'''<li id="l{lead["id"]}"{' class="done"' if sent else ''}><label><input type="checkbox" data-id="{lead["id"]}"{' checked data-sent="1"' if sent else ''}>
 <b>{esc(lead["name"])}</b> <span>{esc(cat)} · {esc(lead.get("city") or "")} · +{num}</span></label>
 <div class="row">{action}<a class="btn ghost" href="{esc(mockup_url(lead, cfg) or "")}">Maquette</a></div>
 <details><summary>Message</summary><p>{esc(msg)}</p></details></li>''')
@@ -444,8 +458,11 @@ li.done{{opacity:.45}} span{{color:var(--muted);font-size:13px;display:block}} .
 details{{margin-top:8px;color:var(--muted);font-size:13px}} input{{margin-right:8px;transform:scale(1.2)}}</style></head>
 <body><main><h1>WhatsApp à envoyer</h1><p>{sum(1 for r in rows if r[4])} mobiles (WhatsApp) et
 {sum(1 for r in rows if not r[4])} fixes (appel), triés par priorité. Coche chaque commerce une fois contacté.
-Une réponse « OUI » : transfère-la-moi ou note-la, je prends la suite.</p><ul>{"".join(items)}</ul></main>
+Une réponse « OUI » : transfère-la-moi ou note-la, je prends la suite.</p><p><a class="btn wa" id="send" href="#" style="display:block">Envoyer la liste des cochés à Claude</a></p>
+<ul>{"".join(items)}</ul></main>
 <script>const k="ywiad-wa-done";let d={{}};try{{d=JSON.parse(localStorage.getItem(k)||"{{}}")}}catch(e){{}}
-document.querySelectorAll("input[data-id]").forEach(c=>{{const li=c.closest("li");c.checked=!!d[c.dataset.id];li.classList.toggle("done",c.checked);
-c.addEventListener("change",()=>{{d[c.dataset.id]=c.checked;li.classList.toggle("done",c.checked);try{{localStorage.setItem(k,JSON.stringify(d))}}catch(e){{}}}})}});</script>
+document.querySelectorAll("input[data-id]").forEach(c=>{{const li=c.closest("li");c.checked=!!d[c.dataset.id]||!!c.dataset.sent;li.classList.toggle("done",c.checked);
+c.addEventListener("change",()=>{{d[c.dataset.id]=c.checked;li.classList.toggle("done",c.checked);try{{localStorage.setItem(k,JSON.stringify(d))}}catch(e){{}}}})}});
+document.getElementById("send").addEventListener("click",e=>{{const ids=[...document.querySelectorAll("input[data-id]:checked")].map(c=>c.dataset.id);
+e.currentTarget.href="mailto:{cfg["business"]["sender_email"]}?subject="+encodeURIComponent("[YWIAD-WA] envoyés")+"&body="+encodeURIComponent("ids: "+ids.join(","));}});</script>
 </body></html>'''
