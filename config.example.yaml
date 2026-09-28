@@ -25,7 +25,7 @@ markets:
     currency: "€"
     timezone: "Europe/Paris"
     cities: ["Paris", "Lyon", "Marseille", "Bordeaux", "Nantes", "Lille", "Toulouse", "Nice", "Montpellier", "Strasbourg"]
-    prices: { geo: 99, basique: 490, standard: 1290, premium: 2900 }
+    prices: { geo: 149, basique: 490, standard: 1290, premium: 2900 }
     monthly: { basique: 29, standard: 49, premium: 99 }
     legal: >-
       Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
@@ -38,7 +38,7 @@ markets:
     currency: "€"
     timezone: "Europe/Brussels"
     cities: ["Bruxelles", "Liège", "Namur", "Charleroi", "Mons"]
-    prices: { geo: 99, basique: 490, standard: 1290, premium: 2900 }
+    prices: { geo: 149, basique: 490, standard: 1290, premium: 2900 }
     monthly: { basique: 29, standard: 49, premium: 99 }
     legal: >-
       Vous recevez ce message car votre adresse professionnelle est publiée en ligne et notre offre
