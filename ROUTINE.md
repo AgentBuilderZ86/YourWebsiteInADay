@@ -71,6 +71,10 @@ scripts/state.sh pull
     confirmer l'Audit GEO complet au prix du marché (`markets.<code>.prices.geo`, livré en 48 h, réglé à la
     livraison), demander l'accès à la fiche Google si possible, puis « [CLOSING] <commerce> — Audit GEO —
     <prix> » à AZ. Si le prospect veut aussi refaire son site : proposer la formule conseillée.
+  - Maroc (`geo_offers`) : « 1 » = Correctifs GEO prioritaires (990 MAD, 72 h), « 2 » = Optimisation GEO
+    complète (1 490 MAD, 7 jours). Sur réponse : confirmer l'offre, demander l'accès au site (CMS/FTP) ou
+    le contact du prestataire, noter le score de départ (`ywiad audit-url <site>`), puis « [CLOSING] ».
+    Après intervention : remesurer et envoyer le score avant/après au client (preuve à l'appui).
   - Argument GEO : chaque prospect a son rapport « Audit SEO & GEO » (`<maquette>/audit/`). Le citer
     quand il hésite : ses recommandations sont incluses dans la refonte (Basique : bases GEO ;
     Standard : audit complet mis en œuvre ; Premium : + suivi mensuel). Ne citer que les points du rapport.

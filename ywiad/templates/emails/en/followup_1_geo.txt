@@ -6,6 +6,7 @@ Following up on {{ lead.name }}'s visibility on Google and in AI assistants. The
 
 Your free report is still online: {{ audit_url }}
 
-Just reply "YES" and I'll start the {{ geo_offer.label }} ({{ geo_offer.price }}, {{ geo_offer.delivery }}) — you only pay on delivery.
+{% if geo_offers|length > 1 %}Reply "1" for {{ geo_offers[0].label }} ({{ geo_offers[0].price }}) or "2" for {{ geo_offers[1].label }} ({{ geo_offers[1].price }}): your score is re-measured afterwards, and you only pay once the work is delivered.{% else %}Just reply "YES" and I'll start the {{ geo_offer.label }} ({{ geo_offer.price }}, {{ geo_offer.delivery }}) — you only pay on delivery.{% endif %}
+
 
 {% include "emails/en/_signature.txt" %}

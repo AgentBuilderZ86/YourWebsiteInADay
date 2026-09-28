@@ -13,7 +13,7 @@ from markupsafe import Markup, escape
 
 from .discover import social_platform
 from .audit import geo_findings, geo_score, issue_label
-from .pricing import format_price, market, pricing_table
+from .pricing import format_price, geo_offers, market, pricing_table
 
 _env = Environment(loader=PackageLoader("ywiad", "templates"), autoescape=False,
                    trim_blocks=True, lstrip_blocks=True, keep_trailing_newline=True)
@@ -144,12 +144,8 @@ def de_name(name: str) -> str:
 
 
 def _geo_offer(cfg: dict[str, Any], lead: dict[str, Any], lang: str) -> dict[str, Any] | None:
-    g = cfg["pricing"].get("geo_audit")
-    m = market(cfg, lead.get("market"))
-    if not g or "geo" not in m.get("prices", {}):
-        return None
-    return {"label": g["label"][lang], "delivery": g["delivery"][lang], "features": g["features"][lang],
-            "price": format_price(m["prices"]["geo"], m)}
+    offers = geo_offers(cfg, lead.get("market"), lang)
+    return offers[0] if offers else None
 
 
 def _geo_line(lead: dict[str, Any], s: dict[str, Any], has_site: bool, site_down: bool, lang: str) -> str:
@@ -188,6 +184,7 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
         "geo_score": geo_score((lead.get("extra") or {}).get("geo")),
         "geo_top": geo_findings((lead.get("extra") or {}).get("geo"), lang)[:3],
         "geo_offer": _geo_offer(cfg, lead, lang),
+        "geo_offers": geo_offers(cfg, lead.get("market"), lang),
         "cat": fmt["cat"], "un_cat": fmt["un_cat"], "a_cat": fmt["a_cat"], "city": fmt["city"],
         "geo_line": _geo_line(lead, s, has_site, site_down, lang),
         "platform": platform,

@@ -13,12 +13,24 @@ Or de plus en plus de clients demandent directement à une IA « quel est le mei
 Le rapport complet est en ligne, gratuitement :
 {{ audit_url }}
 
+{% if geo_offers|length > 1 %}
+Deux façons d'y remédier ; nous intervenons directement sur votre site :
+
+{% for o in geo_offers %}
+  {{ loop.index }}. {{ o.label }} : {{ o.price }} (livré en {{ o.delivery }}) — {{ o.features[0] }}.
+{% endfor %}
+
+Dans les deux cas, votre score SEO & GEO (aujourd'hui {{ geo_score }}/100) est remesuré après l'intervention : vous voyez le gain, preuve à l'appui.
+
+Répondez « 1 » ou « 2 » et je m'en occupe. Vous ne réglez qu'une fois le travail livré.
+{% else %}
 Pour aller plus loin, notre {{ geo_offer.label }} ({{ geo_offer.price }}, livré en {{ geo_offer.delivery }}) :
 {% for x in geo_offer.features %}
   – {{ x }}
 {% endfor %}
 
 Répondez simplement « OUI » et je le lance. Vous ne réglez qu'à la livraison du rapport.
+{% endif %}
 
 Bien cordialement,
 {% include "emails/fr/_signature.txt" %}

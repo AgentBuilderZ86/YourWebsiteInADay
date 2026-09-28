@@ -15,7 +15,7 @@ from typing import Any
 
 from jinja2 import Environment, PackageLoader, select_autoescape
 
-from .pricing import format_price, enabled_markets, market, pricing_table
+from .pricing import format_price, geo_offers, enabled_markets, market, pricing_table
 
 log = logging.getLogger("ywiad")
 
@@ -318,6 +318,7 @@ AUDIT_STRINGS = {
         "good_title": "Ce qui est déjà en place",
         "cta": "Toutes ces recommandations sont mises en place dans le cadre de la refonte de votre site. Votre maquette est déjà prête : répondez « OUI » et je la mets en ligne à votre nom. Vous ne réglez qu'une fois le site en ligne et validé.",
         "cta_geo": "Ce rapport liste ce que nous avons constaté. L'{label} ({price}, livré en {delivery}) va plus loin : pages clés, fiche Google, comparaison avec 3 concurrents locaux, cohérence de vos coordonnées sur le web et plan d'action priorisé, présenté en 30 min. Répondez « OUI » à mon email : vous ne réglez qu'à la livraison.",
+        "cta_geo_multi": "Nous corrigeons ces points directement sur votre site : {options}. Votre score (aujourd'hui {score}/100) est remesuré après l'intervention, preuve à l'appui. Répondez « 1 » ou « 2 » à mon email : vous ne réglez qu'une fois le travail livré.",
         "see_mockup": "Voir ma maquette", "email": "Répondre par email",
         "footer": "Audit réalisé automatiquement à partir de votre page publique ; aucune donnée personnelle collectée.",
         "passed": {"schema_local": "Données structurées de commerce local", "schema_faq": "FAQ structurée", "nap": "Nom, adresse et téléphone lisibles",
@@ -336,6 +337,7 @@ AUDIT_STRINGS = {
         "good_title": "Already in place",
         "cta": "All these recommendations are implemented as part of your website redesign. Your mock-up is ready: reply \"YES\" and I'll put it live under your name. You only pay once the site is live and approved.",
         "cta_geo": "This report lists what we found. The {label} ({price}, delivered in {delivery}) goes further: key pages, Google profile, benchmark against 3 local competitors, consistency of your details across the web and a prioritised action plan, walked through in 30 minutes. Reply \"YES\" to my email: you only pay on delivery.",
+        "cta_geo_multi": "We fix these points directly on your website: {options}. Your score (currently {score}/100) is re-measured after the work, with proof. Reply \"1\" or \"2\" to my email: you only pay once the work is delivered.",
         "see_mockup": "See my mock-up", "email": "Reply by email",
         "footer": "Audit run automatically on your public page; no personal data collected.",
         "passed": {"schema_local": "Local-business structured data", "schema_faq": "Structured FAQ", "nap": "Readable name, address and phone",
@@ -367,9 +369,13 @@ def render_audit(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | No
     score = geo_score(geo) if has_site else 0
     color = "#c92a2a" if (score or 0) < 40 else "#b7791f" if score < 70 else "#2f7d4f"
     if extra.get("offer") == "geo":
-        g, m = cfg["pricing"]["geo_audit"], market(cfg, lead.get("market"))
-        t["cta"] = t["cta_geo"].format(label=g["label"][lang], delivery=g["delivery"][lang],
-                                       price=format_price(m["prices"]["geo"], m))
+        offers = geo_offers(cfg, lead.get("market"), lang)
+        if len(offers) > 1:
+            t["cta"] = t["cta_geo_multi"].format(score=score, options=" ; ".join(
+                f"{i}. {o['label']} : {o['price']} ({o['delivery']})" for i, o in enumerate(offers, 1)))
+        elif offers:
+            o = offers[0]
+            t["cta"] = t["cta_geo"].format(label=o["label"], delivery=o["delivery"], price=o["price"])
         mockup_url = None
     return _env.get_template("mockups/audit.html").render(
         lang=lang, t=t, lead=lead, business=cfg["business"], today=today, geo_score=score, score_color=color,

@@ -6,6 +6,7 @@ Je reviens vers vous au sujet de la visibilité {{ de_name }} sur Google et dans
 
 Votre rapport gratuit est toujours en ligne : {{ audit_url }}
 
-Un simple « OUI » en réponse et je lance l'{{ geo_offer.label }} ({{ geo_offer.price }}, {{ geo_offer.delivery }}) — vous ne réglez qu'à la livraison.
+{% if geo_offers|length > 1 %}Répondez « 1 » pour les {{ geo_offers[0].label }} ({{ geo_offers[0].price }}) ou « 2 » pour l’{{ geo_offers[1].label }} ({{ geo_offers[1].price }}) : votre score est remesuré après coup, et vous ne réglez qu'une fois le travail livré.{% else %}Un simple « OUI » en réponse et je lance l'{{ geo_offer.label }} ({{ geo_offer.price }}, {{ geo_offer.delivery }}) — vous ne réglez qu'à la livraison.{% endif %}
+
 
 {% include "emails/fr/_signature.txt" %}

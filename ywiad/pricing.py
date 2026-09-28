@@ -78,3 +78,20 @@ def can_email_market(cfg: dict[str, Any], market_code: str | None) -> tuple[bool
     if m.get("requires_postal_address") and not cfg["business"].get("postal_address"):
         return False, "adresse postale de l'expéditeur requise (business.postal_address)"
     return True, ""
+
+
+def geo_offers(cfg: dict[str, Any], market_code: str | None, lang: str | None = None) -> list[dict[str, Any]]:
+    """Offres GEO du marché : « Audit GEO complet » par défaut (prix `geo`), ou la liste
+    `geo_offers` du marché (ex. Maroc : correctifs prioritaires + optimisation complète)."""
+    m = market(cfg, market_code)
+    lang = lang or m.get("language", "fr")
+    keys = m.get("geo_offers") or (["geo_audit"] if "geo" in m.get("prices", {}) else [])
+    out = []
+    for key in keys:
+        spec = cfg["pricing"].get(key)
+        amount = m["prices"].get("geo" if key == "geo_audit" else key)
+        if not spec or amount is None:
+            continue
+        out.append({"key": key, "label": spec["label"][lang], "delivery": spec["delivery"][lang],
+                    "features": spec["features"][lang], "price": format_price(amount, m), "amount": amount})
+    return out

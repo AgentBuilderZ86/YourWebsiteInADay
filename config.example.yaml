@@ -51,7 +51,8 @@ markets:
     currency: "MAD"
     timezone: "Africa/Casablanca"
     cities: ["Casablanca", "Rabat", "Marrakech", "Tanger", "Agadir", "Fès"]
-    prices: { geo: 490, basique: 2990, standard: 6990, premium: 14990 }
+    prices: { geo_fix: 990, geo_full: 1490, basique: 2990, standard: 6990, premium: 14990 }
+    geo_offers: [geo_fix, geo_full]
     monthly: { basique: 149, standard: 290, premium: 590 }
     legal: >-
       Vous recevez ce message car les coordonnées de votre activité sont publiques (loi 09-08).
@@ -198,6 +199,19 @@ pricing:
     features:
       fr: ["Analyse de vos pages clés et de votre fiche Google", "Comparaison avec 3 concurrents locaux", "Cohérence de vos coordonnées sur Google, Facebook, TripAdvisor et annuaires", "Plan d'action priorisé, prêt à confier à votre prestataire", "Échange de 30 min pour le présenter"]
       en: ["Review of your key pages and Google Business Profile", "Benchmark against 3 local competitors", "Consistency of your details across Google, Facebook, TripAdvisor and directories", "Prioritised action plan, ready to hand to your web provider", "30-minute call to walk you through it"]
+  # Offres GEO « mise en œuvre » (marchés qui les listent dans markets.<code>.geo_offers)
+  geo_fix:
+    label: { fr: "Correctifs GEO prioritaires", en: "Priority GEO fixes" }
+    delivery: { fr: "72 h", en: "72 hours" }
+    features:
+      fr: ["Correction des failles les plus pénalisantes relevées dans votre audit", "Données structurées « commerce local », horaires et coordonnées lisibles par Google et les IA", "Robots IA autorisés et fichier llms.txt", "Score SEO & GEO remesuré après intervention, preuve à l'appui"]
+      en: ["Fix of the most damaging issues found in your audit", "Local-business structured data, hours and contact details readable by Google and AI", "AI crawlers allowed and llms.txt file", "SEO & GEO score re-measured after the work, with proof"]
+  geo_full:
+    label: { fr: "Optimisation GEO complète", en: "Full GEO optimisation" }
+    delivery: { fr: "7 jours", en: "7 days" }
+    features:
+      fr: ["Toutes les recommandations de votre audit mises en place", "FAQ rédigée et balisée, fiche Google optimisée", "Coordonnées harmonisées sur Google, Facebook, TripAdvisor et annuaires", "Comparaison avec 3 concurrents locaux", "Score SEO & GEO remesuré après intervention, preuve à l'appui"]
+      en: ["Every recommendation from your audit implemented", "FAQ written and marked up, Google profile optimised", "Details aligned across Google, Facebook, TripAdvisor and directories", "Benchmark against 3 local competitors", "SEO & GEO score re-measured after the work, with proof"]
   tiers:
     basique:
       label: { fr: "Basique — Site vitrine express", en: "Starter — Express one-page site" }
