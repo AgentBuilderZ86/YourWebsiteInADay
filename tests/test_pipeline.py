@@ -374,3 +374,12 @@ def test_www_missing_but_domain_alive_is_not_expired(monkeypatch):
     assert r.issues[0].code == "down"  # le domaine vit (messagerie), seul le site manque
     monkeypatch.setattr(audit, "domain_exists", lambda d: False)
     assert audit.audit_url("https://www.resto.be").issues[0].code == "expired"
+
+
+def test_directory_listing_is_not_a_site():
+    html = ("<html><head><title>Index of /</title></head><body><h1>Index of /</h1>"
+            "<a href='grabels/'>grabels/</a></body></html>")
+    r = analyze_html(html, final_url="https://montpellierfleurs.com/", load_seconds=1.0,
+                     page_bytes=500, https_ok=True, ssl_valid=True)
+    assert [i.code for i in r.issues] == ["listing"]
+    assert not r.reachable

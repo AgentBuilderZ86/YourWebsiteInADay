@@ -60,6 +60,7 @@ ISSUE_LABELS: dict[str, dict[str, str]] = {
         "no_site": "Aucun site web : vos clients ne vous trouvent pas sur Google",
         "down": "Le site est inaccessible (erreur {status})",
         "expired": "Le nom de domaine {host} ne répond plus (probablement expiré) : votre site a disparu d'internet",
+        "listing": "L'adresse {host} n'affiche qu'une liste de fichiers techniques (« Index of / ») : vos clients n'y voient pas votre site",
         "parked": "L'adresse {host} affiche une page d'hébergeur ou de revente de nom de domaine : votre site n'y existe plus",
         "empty": "Le site est vide, en construction ou quasi sans contenu",
         "no_https": "Le site n'est pas sécurisé (pas de HTTPS) : Chrome affiche « Non sécurisé »",
@@ -85,6 +86,7 @@ ISSUE_LABELS: dict[str, dict[str, str]] = {
         "no_site": "No website: customers can't find you on Google",
         "down": "The website is down (error {status})",
         "expired": "The domain {host} no longer resolves (probably expired): your website has vanished from the internet",
+        "listing": "{host} only shows a raw file listing (\"Index of /\"): customers don't see your website there",
         "parked": "{host} now shows a hosting or domain-resale page: your website no longer exists there",
         "empty": "The website is empty, under construction or has almost no content",
         "no_https": "The site isn't secure (no HTTPS): Chrome shows \"Not secure\"",
@@ -232,6 +234,10 @@ def analyze_html(html: str, *, final_url: str, load_seconds: float, page_bytes: 
     if is_challenge_page(html):
         return AuditResult(final_url, 100, [], [], round(load_seconds, 2), verified=False,
                            note="page anti-robot (captcha), audit non fiable")
+    if p.title.strip().lower().startswith("index of /"):
+        # Listing de répertoire du serveur : aucun site visible pour le client
+        return AuditResult(final_url, 0, [Issue("listing", 100, {"host": host.removeprefix("www.")})],
+                           [], round(load_seconds, 2), reachable=False)
     if is_parking_page(p.title, " ".join(p.text.split()), host):
         # Page d'hébergeur, de revente ou d'enchères : le site du commerce n'existe plus à cette adresse
         return AuditResult(final_url, 0, [Issue("parked", 100, {"host": host.removeprefix("www.")})],

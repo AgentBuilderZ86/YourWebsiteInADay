@@ -35,7 +35,7 @@ STRINGS = {
         "audit_label": "Audit express",
         "verdicts": ("Critique", "À refaire", "À moderniser"),
         "problem": {"no_site": "Aucun site web trouvé", "expired": "Votre site a disparu d'internet",
-                    "parked": "Votre site a disparu d'internet", "down": "Votre site ne s'affiche plus"},
+                    "parked": "Votre site a disparu d'internet", "listing": "Votre site ne s'affiche plus", "down": "Votre site ne s'affiche plus"},
         "mockup_kicker": "Votre maquette",
         "mockup_title": "Votre nouveau site est déjà prêt",
         "mockup_text": "J'ai conçu gratuitement une première version du site {de_name} : pensée pour le mobile, rapide, avec prise de contact et itinéraire en un geste. Elle est en ligne, prête à être personnalisée.",
@@ -59,7 +59,7 @@ STRINGS = {
         "audit_label": "Quick audit",
         "verdicts": ("Critical", "Needs a rebuild", "Needs updating"),
         "problem": {"no_site": "No website found", "expired": "Your website has vanished",
-                    "parked": "Your website has vanished", "down": "Your website no longer loads"},
+                    "parked": "Your website has vanished", "listing": "Your website no longer loads", "down": "Your website no longer loads"},
         "mockup_kicker": "Your mock-up",
         "mockup_title": "Your new website is already built",
         "mockup_text": "I designed a free first version of {name}'s website: mobile-first, fast, with one-tap contact and directions. It's live and ready to be tailored to you.",
@@ -81,6 +81,7 @@ HOOKS = {
     "fr": {
         "expired": "votre site a disparu d'internet",
         "parked": "votre site a disparu d'internet",
+        "listing": "votre site ne s'affiche plus",
         "down": "votre site est inaccessible",
         "empty": "votre site semble vide",
         "no_https": "votre site affiche « Non sécurisé »",
@@ -95,6 +96,7 @@ HOOKS = {
     "en": {
         "expired": "your website has disappeared from the internet",
         "parked": "your website has disappeared from the internet",
+        "listing": "your website no longer loads",
         "down": "your website is down",
         "empty": "your website looks empty",
         "no_https": "your website shows \"Not secure\"",
@@ -129,7 +131,7 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
     recommended = next((t for t in tiers if t["recommended"]), tiers[1])
     issues = [{**i, "label": issue_label(i["code"], i.get("params", {}), lang)} for i in lead.get("issues") or []]
     codes = [i["code"] for i in issues]
-    site_down = bool(lead.get("website")) and bool({"down", "expired", "parked"} & set(codes))
+    site_down = bool(lead.get("website")) and bool({"down", "expired", "parked", "listing"} & set(codes))
     has_site = bool(lead.get("website")) and not site_down and "no_site" not in codes
     hooks = HOOKS[lang]
     cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {})
