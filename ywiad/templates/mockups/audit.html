@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="{{ lang }}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>{{ t.title }} — {{ lead.name }}</title>
+<style>
+:root { --bg:#f3efe9; --card:#fff; --ink:#1a1614; --muted:#6b625c; --line:#e8e2da; --brand:#4338ca; --bad:#c92a2a; --ok:#2f7d4f; --warn:#b7791f; }
+@media (prefers-color-scheme: dark) { :root { --bg:#161412; --card:#211e1b; --ink:#f3efe9; --muted:#a79d95; --line:#38322d; --brand:#8b85f0; } }
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; }
+main { max-width:760px; margin:0 auto; padding:28px 16px 64px; }
+.brand { font-family:Georgia,serif; font-size:18px; }
+.brand span { color:var(--brand); }
+.kicker { text-transform:uppercase; letter-spacing:1.6px; font-size:12px; color:var(--muted); margin:28px 0 6px; }
+h1 { font-family:Georgia,serif; font-weight:400; font-size:34px; line-height:1.15; margin:0 0 8px; }
+h2 { font-family:Georgia,serif; font-weight:400; font-size:24px; margin:36px 0 10px; }
+.lede { color:var(--muted); margin:0; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:18px; padding:22px; margin-top:18px; }
+.score { display:flex; gap:22px; align-items:center; flex-wrap:wrap; }
+.num { font-family:Georgia,serif; font-size:64px; line-height:1; }
+.num small { font-size:20px; color:var(--muted); }
+.bar { height:8px; background:var(--line); border-radius:8px; overflow:hidden; margin-top:10px; }
+.bar i { display:block; height:100%; }
+.why { font-size:15px; color:var(--muted); flex:1; min-width:240px; }
+ol { padding:0; margin:0; list-style:none; counter-reset:f; }
+ol li { counter-increment:f; border-top:1px solid var(--line); padding:16px 0 16px 44px; position:relative; }
+ol li:first-child { border-top:0; }
+ol li::before { content:counter(f); position:absolute; left:0; top:16px; width:28px; height:28px; border-radius:50%; background:var(--ink); color:var(--bg); font-size:13px; display:flex; align-items:center; justify-content:center; font-weight:600; }
+.prob { font-weight:600; }
+.fix { color:var(--muted); font-size:15px; margin-top:4px; }
+.fix b { color:var(--ok); font-weight:600; }
+ul.ok { padding-left:18px; color:var(--muted); font-size:15px; margin:0; }
+.cta { background:var(--ink); color:var(--bg); border-radius:18px; padding:24px; margin-top:32px; }
+.cta p { margin:0 0 16px; }
+.btn { display:inline-block; padding:13px 22px; border-radius:999px; background:var(--bg); color:var(--ink); text-decoration:none; font-weight:600; margin:0 8px 8px 0; }
+.btn.ghost { background:transparent; color:var(--bg); border:1px solid rgba(255,255,255,.35); }
+footer { color:var(--muted); font-size:13px; margin-top:28px; }
+</style>
+</head>
+<body>
+<main>
+  <div class="brand">YourWebsite<span>InADay</span></div>
+  <p class="kicker">{{ t.kicker }} · {{ today }}</p>
+  <h1>{{ t.h1 }} {{ lead.name }}</h1>
+  <p class="lede">{{ t.lede }}</p>
+
+  <div class="card score">
+    {% if geo_score is not none %}
+    <div>
+      <div class="num" style="color: {{ score_color }}">{{ geo_score }}<small>/100</small></div>
+      <div class="bar" style="width:160px"><i style="width:{{ geo_score }}%; background:{{ score_color }}"></i></div>
+    </div>
+    {% endif %}
+    <div class="why">{{ t.why }}</div>
+  </div>
+
+  <h2>{{ t.findings_title }}</h2>
+  <div class="card">
+    <ol>
+      {% for f in findings %}
+      <li><div class="prob">{{ f.problem }}</div><div class="fix"><b>{{ t.fix }}</b> {{ f.fix }}</div></li>
+      {% endfor %}
+      {% for i in site_issues %}
+      <li><div class="prob">{{ i }}</div><div class="fix"><b>{{ t.fix }}</b> {{ t.fixed_by_redesign }}</div></li>
+      {% endfor %}
+    </ol>
+  </div>
+
+  {% if passed %}
+  <h2>{{ t.good_title }}</h2>
+  <div class="card"><ul class="ok">{% for p in passed %}<li>{{ p }}</li>{% endfor %}</ul></div>
+  {% endif %}
+
+  <div class="cta">
+    <p>{{ t.cta }}</p>
+    {% if mockup_url %}<a class="btn" href="{{ mockup_url }}">{{ t.see_mockup }}</a>{% endif %}
+    <a class="btn ghost" href="https://wa.me/{{ business.whatsapp }}">WhatsApp</a>
+    <a class="btn ghost" href="mailto:{{ business.sender_email }}?subject={{ lead.name|urlencode }}">{{ t.email }}</a>
+  </div>
+
+  <footer>{{ t.footer }}</footer>
+</main>
+</body>
+</html>

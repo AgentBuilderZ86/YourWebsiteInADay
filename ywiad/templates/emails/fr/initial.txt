@@ -19,6 +19,11 @@ J'ai conçu gratuitement une première version de votre nouveau site — pensée
 {{ mockup_url }}
 
 {% endif %}
+{% if audit_url %}
+Votre audit SEO & GEO (visibilité sur Google et dans les assistants IA comme ChatGPT) est prêt aussi : {{ geo_line }}
+{{ audit_url }}
+
+{% endif %}
 Nos formules, clé en main (design, textes, mise en ligne, hébergement et HTTPS compris) :
 
 {% for t in tiers %}

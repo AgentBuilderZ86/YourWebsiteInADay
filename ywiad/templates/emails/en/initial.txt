@@ -19,6 +19,11 @@ I designed a free first version of your new website — mobile-first, fast, with
 {{ mockup_url }}
 
 {% endif %}
+{% if audit_url %}
+Your SEO & GEO audit (visibility on Google and in AI assistants like ChatGPT) is ready too: {{ geo_line }}
+{{ audit_url }}
+
+{% endif %}
 Our turnkey packages (design, copy, launch, hosting and HTTPS included):
 
 {% for t in tiers %}

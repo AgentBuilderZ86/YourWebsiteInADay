@@ -192,20 +192,20 @@ pricing:
       label: { fr: "Basique — Site vitrine express", en: "Starter — Express one-page site" }
       delivery: { fr: "24 h", en: "24 hours" }
       features:
-        fr: ["Site one-page responsive (mobile d'abord)", "Horaires, adresse, carte, téléphone, WhatsApp", "HTTPS + hébergement 1 an inclus", "Fiche Google Business reliée"]
-        en: ["Mobile-first one-page website", "Hours, address, map, phone, WhatsApp", "HTTPS + 1 year hosting included", "Google Business Profile linked"]
+        fr: ["Site one-page responsive (mobile d'abord)", "Horaires, adresse, carte, téléphone, WhatsApp", "HTTPS + hébergement 1 an inclus", "Fiche Google Business reliée", "Bases GEO : données structurées schema.org + FAQ pour être compris par Google et les IA"]
+        en: ["Mobile-first one-page website", "Hours, address, map, phone, WhatsApp", "HTTPS + 1 year hosting included", "Google Business Profile linked", "GEO basics: schema.org structured data + FAQ so Google and AI assistants understand you"]
     standard:
       label: { fr: "Standard — Site professionnel", en: "Business — Professional website" }
       delivery: { fr: "72 h", en: "72 hours" }
       features:
-        fr: ["Tout le Basique", "Jusqu'à 5 pages", "Prise de rendez-vous / réservation", "SEO local avancé", "Rédaction des textes incluse"]
-        en: ["Everything in Starter", "Up to 5 pages", "Online booking / appointments", "Advanced local SEO", "Copywriting included"]
+        fr: ["Tout le Basique", "Jusqu'à 5 pages", "Prise de rendez-vous / réservation", "Audit SEO & GEO complet et mise en œuvre de toutes les recommandations", "Optimisation pour les assistants IA (ChatGPT, Perplexity, Gemini) : FAQ, llms.txt, robots IA", "Rédaction des textes incluse"]
+        en: ["Everything in Starter", "Up to 5 pages", "Online booking / appointments", "Full SEO & GEO audit with every recommendation implemented", "AI-assistant optimisation (ChatGPT, Perplexity, Gemini): FAQ, llms.txt, AI crawlers", "Copywriting included"]
     premium:
       label: { fr: "Premium — Sur-mesure & vente en ligne", en: "Premium — Custom site & online sales" }
       delivery: { fr: "7 jours", en: "7 days" }
       features:
-        fr: ["Tout le Standard", "Boutique ou réservation avec paiement", "Design sur-mesure", "Multilingue", "Rapport mensuel de performance"]
-        en: ["Everything in Business", "Online shop or paid bookings", "Custom design", "Multilingual", "Monthly performance report"]
+        fr: ["Tout le Standard", "Boutique ou réservation avec paiement", "Design sur-mesure", "Multilingue", "Suivi mensuel de visibilité Google & IA (SEO + GEO)"]
+        en: ["Everything in Business", "Online shop or paid bookings", "Custom design", "Multilingual", "Monthly Google & AI visibility tracking (SEO + GEO)"]
 
 outreach:
   # queue : les emails sont mis en file ; Claude les envoie via Gmail (`ywiad queue`, puis `ywiad confirm`)

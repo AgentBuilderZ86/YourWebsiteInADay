@@ -86,6 +86,7 @@
     .hero-photo { min-height: 70vh; }
   }
 </style>
+<script type="application/ld+json">{{ jsonld|safe }}</script>
 </head>
 <body>
 <div class="banner">{{ (t.banner_redesign if spec.redesign else t.banner).format(biz=business.name, name=lead.name) }} — <a href="{{ business.website }}">{{ t.more }}</a></div>
@@ -177,6 +178,14 @@
   </section>
   {% endif %}
 
+  {% if faq %}
+  <section class="block" id="faq">
+    <h2>{{ "Questions fréquentes" if lang == "fr" else "FAQ" }}</h2>
+    <div class="grid">
+      {% for f in faq %}<div class="card"><h3>{{ f.q }}</h3><p>{{ f.a }}</p></div>{% endfor %}
+    </div>
+  </section>
+  {% endif %}
   <section class="block" id="contact">
     <h2>{{ t.contact }}</h2>
     <div class="contact">

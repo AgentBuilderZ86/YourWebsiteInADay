@@ -12,7 +12,7 @@ from jinja2 import Environment, PackageLoader, select_autoescape
 from markupsafe import Markup, escape
 
 from .discover import social_platform
-from .audit import issue_label
+from .audit import geo_findings, geo_score, issue_label
 from .pricing import market, pricing_table
 
 _env = Environment(loader=PackageLoader("ywiad", "templates"), autoescape=False,
@@ -38,6 +38,11 @@ STRINGS = {
         "verdicts": ("Critique", "À refaire", "À moderniser"),
         "problem": {"social_only": "Pas de site à votre nom", "no_site": "Aucun site web trouvé", "expired": "Votre site a disparu d'internet",
                     "parked": "Votre site a disparu d'internet", "listing": "Votre site ne s'affiche plus", "down": "Votre site ne s'affiche plus"},
+        "geo_kicker": "Audit SEO & GEO offert",
+        "geo_title": "Votre visibilité sur Google et dans les IA",
+        "geo_site": "Votre site obtient {g}/100 sur nos critères SEO & GEO : ce qui permet à Google et aux assistants IA (ChatGPT, Perplexity, Gemini) de comprendre votre commerce et de le recommander. Le rapport détaille {k} recommandations, toutes mises en place dans la refonte.",
+        "geo_none": "Le GEO est le nouveau SEO : de plus en plus de clients demandent directement à une IA où aller. Je vous ai préparé {k} recommandations pour apparaître dans ses réponses comme dans Google, toutes mises en place avec votre site.",
+        "geo_cta": "Lire mon audit",
         "mockup_kicker": "Votre maquette",
         "mockup_title": "Votre nouveau site est déjà prêt",
         "mockup_text": "J'ai conçu gratuitement une première version du site {de_name} : pensée pour le mobile, rapide, avec prise de contact et itinéraire en un geste. Elle est en ligne, prête à être personnalisée.",
@@ -66,6 +71,11 @@ STRINGS = {
         "verdicts": ("Critical", "Needs a rebuild", "Needs updating"),
         "problem": {"social_only": "No website of your own", "no_site": "No website found", "expired": "Your website has vanished",
                     "parked": "Your website has vanished", "listing": "Your website no longer loads", "down": "Your website no longer loads"},
+        "geo_kicker": "Free SEO & GEO audit",
+        "geo_title": "Your visibility on Google and in AI assistants",
+        "geo_site": "Your website scores {g}/100 on our SEO & GEO criteria: what lets Google and AI assistants (ChatGPT, Perplexity, Gemini) understand your business and recommend it. The report details {k} recommendations, all implemented in the redesign.",
+        "geo_none": "GEO is the new SEO: more and more customers ask an AI directly where to go. I've prepared {k} recommendations to appear in its answers as well as on Google, all implemented with your website.",
+        "geo_cta": "Read my audit",
         "mockup_kicker": "Your mock-up",
         "mockup_title": "Your new website is already built",
         "mockup_text": "I designed a free first version of {name}'s website: mobile-first, fast, with one-tap contact and directions. It's live and ready to be tailored to you.",
@@ -133,6 +143,14 @@ def de_name(name: str) -> str:
     return f"d'{name}" if first and first in "aeiouyâàéèêîïôûœ" else f"de {name}"
 
 
+def _geo_line(lead: dict[str, Any], s: dict[str, Any], has_site: bool, site_down: bool, lang: str) -> str:
+    """Phrase d'accroche de l'audit SEO & GEO (chiffres issus de l'audit réel)."""
+    geo = (lead.get("extra") or {}).get("geo")
+    if has_site and geo:
+        return s["geo_site"].format(g=geo_score(geo), k=len(geo_findings(geo, lang)))
+    return s["geo_none"].format(k=len(geo_findings(None, lang, has_site=False, site_down=site_down)))
+
+
 def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) -> dict[str, Any]:
     m = market(cfg, lead.get("market"))
     lang = m.get("language", "fr")
@@ -156,6 +174,8 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
     no_site_sentence = s["social_phrase" if platform else "no_site_phrase"].format(**fmt)
     return {
         "intro": intro,
+        "audit_url": (mockup_url + "audit/") if mockup_url else None,
+        "geo_line": _geo_line(lead, s, has_site, site_down, lang),
         "platform": platform,
         "no_site_sentence": no_site_sentence,
         "de_name": de_name(lead["name"]),

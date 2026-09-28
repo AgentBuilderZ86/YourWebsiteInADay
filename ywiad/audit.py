@@ -133,6 +133,8 @@ class AuditResult:
     # False quand l'audit n'est pas fiable (anti-robot, site en JavaScript…) : on ne prospecte pas
     verified: bool = True
     note: str = ""
+    # Contrôles SEO & GEO (visibilité Google et assistants IA) : hors note, pour le rapport d'audit
+    geo: list[dict[str, Any]] = field(default_factory=list)
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -167,12 +169,23 @@ class _PageParser(HTMLParser):
         self.text_parts: list[str] = []
         self.inline_scripts = 0
         self._skip = 0
+        self.jsonld: list[str] = []
+        self._in_ld = False
+        self.lang = ""
+        self.canonical = False
 
     def handle_starttag(self, tag: str, attrs: list[tuple[str, str | None]]) -> None:
         a = {k.lower(): (v or "") for k, v in attrs}
+        if tag == "html":
+            self.lang = a.get("lang", "")
+        elif tag == "link" and "canonical" in a.get("rel", "").lower():
+            self.canonical = True
+        if tag == "script" and "ld+json" in a.get("type", "").lower():
+            self._in_ld = True
+            self.jsonld.append("")
         if tag in ("script", "style", "noscript"):
             self._skip += 1
-            if tag == "script" and not a.get("src"):
+            if tag == "script" and not a.get("src") and "ld+json" not in a.get("type", "").lower():
                 self.inline_scripts += 1
         if tag == "title":
             self._in_title = True
@@ -198,12 +211,16 @@ class _PageParser(HTMLParser):
             self.links.append(a["href"])
 
     def handle_endtag(self, tag: str) -> None:
+        if tag == "script":
+            self._in_ld = False
         if tag == "title":
             self._in_title = False
         elif tag in ("script", "style", "noscript") and self._skip:
             self._skip -= 1
 
     def handle_data(self, data: str) -> None:
+        if self._in_ld and self.jsonld:
+            self.jsonld[-1] += data
         if self._in_title:
             self.title += data
         if not self._skip:
@@ -212,6 +229,163 @@ class _PageParser(HTMLParser):
     @property
     def text(self) -> str:
         return " ".join(self.text_parts)
+
+
+# (problème constaté, recommandation) par contrôle SEO/GEO
+GEO_LABELS = {
+    "fr": {
+        "schema_local": ("Aucune donnée structurée « commerce local » (schema.org)",
+                         "Ajouter un bloc schema.org LocalBusiness (nom, adresse, téléphone, horaires, avis) : c'est ce que lisent Google et les IA pour vous identifier."),
+        "schema_faq": ("Pas de FAQ structurée",
+                       "Publier une FAQ (prix, accès, réservation…) balisée FAQPage : les assistants IA reprennent directement ces réponses."),
+        "nap": ("Nom, adresse et téléphone pas clairement lisibles sur la page",
+                "Afficher le trio nom-adresse-téléphone en texte, identique à votre fiche Google : c'est le premier signal de confiance local."),
+        "hours": ("Horaires absents de la page", "Publier vos horaires en texte et en données structurées (openingHours)."),
+        "meta_description": ("Pas de description pour Google", "Rédiger une méta-description de 150 caractères avec votre métier et votre ville."),
+        "title": ("Titre de page absent, trop court ou trop long", "Titre de 50 à 60 caractères : « Métier à Ville — Nom »."),
+        "h1": ("Pas de titre principal (H1)", "Un titre H1 unique qui dit clairement ce que vous faites et où."),
+        "lang": ("Langue de la page non déclarée", "Déclarer la langue (lang=\"fr\") pour être servi aux bonnes recherches."),
+        "canonical": ("Pas d'URL canonique", "Déclarer l'URL canonique pour éviter les doublons dans Google."),
+        "og": ("Aperçu de partage absent (réseaux sociaux, messageries)", "Ajouter titre et image Open Graph : vos liens partagés sur WhatsApp ou Facebook deviennent des vitrines."),
+        "content_depth": ("Contenu trop mince pour être compris par Google et les IA",
+                          "Au moins 300 mots utiles : services, spécialités, quartier, questions fréquentes."),
+        "ai_crawlers": ("Les robots des assistants IA sont bloqués ({blocked})",
+                        "Autoriser GPTBot, ClaudeBot, PerplexityBot et Google-Extended dans robots.txt pour pouvoir être cité par les IA."),
+        "sitemap": ("Pas de plan du site (sitemap.xml)", "Publier un sitemap.xml et le déclarer à Google Search Console."),
+        "llms_txt": ("Pas de fichier llms.txt", "Ajouter un llms.txt qui résume votre activité pour les assistants IA (nouveau standard GEO)."),
+        "site_down": ("Votre site ne s'affiche plus : Google et les assistants IA n'ont plus de source officielle sur vous",
+                      "Remettre en ligne un site rapide, sécurisé et structuré : c'est la condition pour réapparaître dans Google et dans les réponses des IA."),
+        "gbp": ("Soigner votre fiche Google Business Profile et la relier au site",
+                "Horaires, photos, catégorie précise, lien vers le site : c'est la source n°1 de Google Maps et de ses réponses IA."),
+        "consistency": ("Harmoniser vos coordonnées partout",
+                        "Même nom, adresse et téléphone sur Google, Facebook, TripAdvisor et annuaires : les IA recoupent ces sources avant de citer un commerce."),
+        "faq_plan": ("FAQ et données structurées à créer",
+                     "Répondre aux questions que vos clients posent (prix, accès, réservation) en format FAQ balisé : les IA reprennent ces réponses mot pour mot."),
+        "reviews": ("Mettre en avant vos avis clients", "Afficher et baliser vos avis sur le site : un signal de confiance fort pour Google comme pour les IA."),
+        "no_site": ("Aucun site trouvé : ni Google ni les assistants IA n'ont de source officielle sur vous",
+                    "Un site rapide avec données structurées, FAQ et fiche Google reliée : la base pour apparaître dans les réponses de Google et de ChatGPT."),
+    },
+    "en": {
+        "schema_local": ("No local-business structured data (schema.org)",
+                         "Add a schema.org LocalBusiness block (name, address, phone, hours, reviews): it's what Google and AI assistants read to identify you."),
+        "schema_faq": ("No structured FAQ", "Publish an FAQ (prices, access, booking…) marked up as FAQPage: AI assistants quote these answers directly."),
+        "nap": ("Name, address and phone not clearly readable on the page",
+                "Show name-address-phone as text, identical to your Google profile: the first local trust signal."),
+        "hours": ("Opening hours missing from the page", "Publish your hours as text and structured data (openingHours)."),
+        "meta_description": ("No description for Google", "Write a 150-character meta description with your trade and city."),
+        "title": ("Page title missing, too short or too long", "A 50–60 character title: \"Trade in City — Name\"."),
+        "h1": ("No main heading (H1)", "One H1 that clearly says what you do and where."),
+        "lang": ("Page language not declared", "Declare the language (lang attribute) to be served to the right searches."),
+        "canonical": ("No canonical URL", "Declare the canonical URL to avoid duplicates in Google."),
+        "og": ("No sharing preview (social, messaging apps)", "Add Open Graph title and image: links shared on WhatsApp or Facebook become shop windows."),
+        "content_depth": ("Content too thin for Google and AI to understand", "At least 300 useful words: services, specialities, area, FAQs."),
+        "ai_crawlers": ("AI assistants' crawlers are blocked ({blocked})",
+                        "Allow GPTBot, ClaudeBot, PerplexityBot and Google-Extended in robots.txt so AI assistants can cite you."),
+        "sitemap": ("No sitemap.xml", "Publish a sitemap.xml and submit it in Google Search Console."),
+        "llms_txt": ("No llms.txt file", "Add an llms.txt summarising your business for AI assistants (emerging GEO standard)."),
+        "site_down": ("Your website no longer loads: Google and AI assistants have lost their official source about you",
+                      "Bring back a fast, secure, structured website: the prerequisite to reappear in Google and in AI answers."),
+        "gbp": ("Polish your Google Business Profile and link it to the site",
+                "Hours, photos, precise category, link to the site: the #1 source for Google Maps and its AI answers."),
+        "consistency": ("Align your contact details everywhere",
+                        "Same name, address and phone on Google, Facebook, TripAdvisor and directories: AI assistants cross-check these sources before citing a business."),
+        "faq_plan": ("FAQ and structured data to create",
+                     "Answer your customers' questions (prices, access, booking) in marked-up FAQ format: AI assistants quote these answers word for word."),
+        "reviews": ("Showcase your customer reviews", "Show and mark up your reviews on the site: a strong trust signal for Google and AI alike."),
+        "no_site": ("No website found: neither Google nor AI assistants have an official source about you",
+                    "A fast site with structured data, FAQ and a linked Google profile: the foundation to appear in Google's and ChatGPT's answers."),
+    },
+}
+
+
+def geo_findings(geo: list[dict[str, Any]] | None, lang: str, has_site: bool = True,
+                 site_down: bool = False) -> list[dict[str, str]]:
+    """Points à corriger (problème + recommandation), dans l'ordre d'impact."""
+    labels = GEO_LABELS.get(lang, GEO_LABELS["fr"])
+    if not has_site:
+        first = "site_down" if site_down else "no_site"
+        return [{"code": c, "problem": labels[c][0], "fix": labels[c][1]}
+                for c in (first, "gbp", "consistency", "faq_plan", "reviews")]
+    order = ["ai_crawlers", "schema_local", "nap", "hours", "schema_faq", "content_depth", "meta_description",
+             "title", "h1", "llms_txt", "sitemap", "og", "lang", "canonical"]
+    failing = {g["code"]: g for g in geo or [] if not g.get("ok")}
+    out = []
+    for code in order:
+        if code in failing:
+            prob, rec = labels[code]
+            blocked = ", ".join(failing[code].get("blocked", []))
+            out.append({"code": code, "problem": prob.format(blocked=blocked), "fix": rec})
+    return out
+
+
+def geo_score(geo: list[dict[str, Any]] | None) -> int | None:
+    if not geo:
+        return None
+    return round(100 * sum(1 for g in geo if g.get("ok")) / len(geo))
+
+
+LOCAL_TYPES = ("localbusiness", "restaurant", "hotel", "lodgingbusiness", "store", "beautysalon", "hairsalon",
+               "dentist", "medicalbusiness", "foodestablishment", "cafeorcoffeeshop", "bakery", "realestateagent",
+               "autorepair", "florist", "optician", "barorpub", "healthandbeautybusiness", "professionalservice")
+
+
+def geo_checks(p: "_PageParser", html: str) -> list[dict[str, Any]]:
+    """Ce qui aide Google ET les assistants IA (ChatGPT, Perplexity, Gemini…) à comprendre et citer
+    le commerce. Chaque contrôle est un fait vérifié dans la page, jamais une supposition."""
+    ld = " ".join(p.jsonld).lower()
+    text = " ".join(p.text.split())
+    low = text.lower() + " " + ld
+    has_phone = any(h.startswith("tel:") for h in p.links) or bool(re.search(r"(?:\+\d{2,3}|\b0)\s?[1-9](?:[\s.-]?\d{2}){4}", text))
+    has_address = bool(re.search(r"\b\d{4,5}\b", text)) and bool(re.search(
+        r"\b(rue|avenue|av\.|boulevard|bd|place|quai|chemin|route|allée|street|st\.|road|rd|derb|lot|résidence)\b", low))
+    checks = [
+        ("schema_local", any(t in ld for t in LOCAL_TYPES)),
+        ("schema_faq", "faqpage" in ld),
+        ("nap", has_phone and has_address),
+        ("hours", "openinghours" in ld or bool(re.search(r"horaires|opening hours|ouvert|lundi|mardi|mercredi|jeudi|vendredi|samedi|monday|tuesday|saturday|\\b\\d{1,2}h(?:\\d{2})?\\b", low))),
+        ("meta_description", bool(p.meta.get("description", "").strip())),
+        ("title", 10 <= len(p.title.strip()) <= 70),
+        ("h1", p.h1 >= 1),
+        ("lang", bool(p.lang)),
+        ("canonical", p.canonical),
+        ("og", "og:title" in p.meta or "og:image" in p.meta),
+        ("content_depth", len(text.split()) >= 300),
+    ]
+    return [{"code": c, "ok": bool(ok)} for c, ok in checks]
+
+
+def geo_site_checks(base_url: str, timeout: int = 8) -> list[dict[str, Any]]:
+    """Contrôles au niveau du domaine : robots.txt (robots IA bloqués ?), sitemap.xml, llms.txt."""
+    root = f"{urlparse(base_url).scheme}://{urlparse(base_url).netloc}"
+    out: list[dict[str, Any]] = []
+
+    def get(path: str) -> requests.Response | None:
+        try:
+            r = requests.get(root + path, headers=HEADERS, timeout=timeout, allow_redirects=True)
+            return r if r.status_code == 200 and "<html" not in r.text[:500].lower() else None
+        except requests.RequestException:
+            return None
+
+    robots = get("/robots.txt")
+    blocked = []
+    if robots is not None:
+        agent, rules = None, {}
+        for line in robots.text.splitlines():
+            line = line.split("#")[0].strip()
+            if ":" not in line:
+                continue
+            k, v = (x.strip() for x in line.split(":", 1))
+            if k.lower() == "user-agent":
+                agent = v.lower()
+            elif k.lower() == "disallow" and agent is not None and v == "/":
+                rules[agent] = True
+        for bot in ("gptbot", "claudebot", "perplexitybot", "google-extended", "ccbot"):
+            if rules.get(bot) or rules.get("*"):
+                blocked.append(bot)
+    out.append({"code": "ai_crawlers", "ok": not blocked, "blocked": blocked})
+    out.append({"code": "sitemap", "ok": get("/sitemap.xml") is not None or get("/sitemap_index.xml") is not None})
+    out.append({"code": "llms_txt", "ok": get("/llms.txt") is not None})
+    return out
 
 
 def analyze_html(html: str, *, final_url: str, load_seconds: float, page_bytes: int,
@@ -290,7 +464,7 @@ def analyze_html(html: str, *, final_url: str, load_seconds: float, page_bytes: 
     score = max(0, 100 - sum(i.penalty for i in issues))
     issues.sort(key=lambda i: -i.penalty)
     return AuditResult(final_url, score, issues, emails, round(load_seconds, 2),
-                       content=extract_site_content(html, final_url))
+                       content=extract_site_content(html, final_url), geo=geo_checks(p, html))
 
 
 CONTACT_HINTS = ("contact", "nous-contacter", "contactez", "about", "a-propos", "mentions-legales",
@@ -466,6 +640,8 @@ def audit_url(url: str | None, *, timeout: int = 15, use_pagespeed: bool = False
     if not result.emails:
         result.emails = find_contact_emails(resp.url, resp.text, timeout=timeout)
     result.emails = best_emails(result.emails, resp.url)
+    if result.verified and result.reachable:
+        result.geo += geo_site_checks(resp.url)
     if use_pagespeed and result.verified:
         ps = _pagespeed_mobile_score(resp.url)
         if ps is not None and ps < 50:

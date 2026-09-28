@@ -135,9 +135,13 @@ def step_audit(db: DB, cfg: dict[str, Any], auditor: Callable[..., Any] = audit_
 
 def _extra_with_content(lead: dict[str, Any], result: Any) -> dict[str, Any]:
     """Conserve le contenu réel du site (textes, photos, logo) pour une maquette de refonte personnalisée."""
-    extra = {k: v for k, v in (lead.get("extra") or {}).items() if k not in ("site", "audit_note")}
+    extra = {k: v for k, v in (lead.get("extra") or {}).items() if k not in ("site", "audit_note", "geo")}
     if result.note:
         extra["audit_note"] = result.note
+    if getattr(result, "geo", None):
+        extra["geo"] = result.geo
+    else:
+        extra.pop("geo", None)
     content = getattr(result, "content", None) or {}
     if result.verified and result.reachable and (content.get("headline") or content.get("photos") or content.get("sections")):
         extra["site"] = content

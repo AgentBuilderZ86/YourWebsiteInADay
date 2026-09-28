@@ -433,3 +433,20 @@ def test_own_site_candidates_cover_name_and_city_patterns():
     c = own_site_candidates("Le Commerce", "lecommerce07@gmail.com", "Lyon")
     assert "lecommercelyon.fr" in c and "commerce-lyon.fr" in c
     assert "cote-vin-lyon.com" in own_site_candidates("Côté vin", "davysouzy@yahoo.fr", "Lyon")
+
+
+def test_geo_checks_detect_structured_data_and_faq():
+    from ywiad.audit import geo_findings, geo_score
+    html = ("<html lang='fr'><head><title>Boulangerie Martin à Lyon — pains</title>"
+            "<meta name='description' content='x'><link rel='canonical' href='https://b.fr/'>"
+            "<script type='application/ld+json'>{\"@type\":\"Bakery\",\"name\":\"Martin\"}</script></head>"
+            "<body><h1>Boulangerie</h1><p>12 rue Neuve 69002 Lyon — <a href='tel:+33478000000'>04 78 00 00 00</a>"
+            " — ouvert du mardi au samedi</p></body></html>")
+    r = analyze_html(html, final_url="https://b.fr/", load_seconds=0.5, page_bytes=2000, https_ok=True, ssl_valid=True)
+    got = {g["code"]: g["ok"] for g in r.geo}
+    assert got["schema_local"] and got["nap"] and got["hours"] and got["lang"] and got["canonical"]
+    assert not got["schema_faq"] and not got["content_depth"]
+    codes = [f["code"] for f in geo_findings(r.geo, "fr")]
+    assert codes[0] == "schema_faq" or "schema_faq" in codes
+    assert 0 < geo_score(r.geo) < 100
+    assert [f["code"] for f in geo_findings(None, "fr", has_site=False)][0] == "no_site"

@@ -252,17 +252,121 @@ def download_assets(spec: dict[str, Any], out: Path, limit: int = 6) -> tuple[li
     return photos, logo or ""
 
 
+SCHEMA_TYPES = {"restaurant": "Restaurant", "cafe": "CafeOrCoffeeShop", "hotel": "Hotel", "beauty": "BeautySalon",
+                "hairdresser": "HairSalon", "dentist": "Dentist", "optician": "Optician", "florist": "Florist",
+                "bakery": "Bakery", "estate_agent": "RealEstateAgent", "car_repair": "AutoRepair", "bar": "BarOrPub",
+                "pharmacy": "Pharmacy", "jewelry": "JewelryStore", "furniture": "FurnitureStore",
+                "travel_agency": "TravelAgency", "wine_shop": "LiquorStore", "fast_food": "FastFoodRestaurant"}
+
+
+def geo_markup(lead: dict[str, Any], cfg: dict[str, Any], lang: str, hours: str | None) -> tuple[list[dict[str, str]], str]:
+    """FAQ et données structurées schema.org de la maquette (GEO) — uniquement à partir de faits connus."""
+    name, city = lead["name"], lead.get("city") or ""
+    where = lead.get("address") or city
+    phone = (lead.get("phone") or "").split(";")[0].strip()
+    fr = lang == "fr"
+    faq = []
+    if where:
+        faq.append({"q": f"Où se trouve {name} ?" if fr else f"Where is {name}?", "a": where})
+    if phone:
+        faq.append({"q": "Comment nous contacter ou réserver ?" if fr else "How can I contact or book?",
+                    "a": (f"Par téléphone au {phone}, ou directement depuis ce site." if fr
+                          else f"Call {phone}, or directly from this website.")})
+    if hours:
+        faq.append({"q": "Quels sont les horaires ?" if fr else "What are the opening hours?", "a": hours})
+    biz: dict[str, Any] = {"@context": "https://schema.org", "@type": SCHEMA_TYPES.get(lead.get("category") or "", "LocalBusiness"),
+                           "name": name}
+    if phone:
+        biz["telephone"] = phone
+    if where:
+        biz["address"] = {"@type": "PostalAddress", "streetAddress": lead.get("address") or "", "addressLocality": city}
+    if hours:
+        biz["openingHours"] = hours
+    if (lead.get("extra") or {}).get("cuisine"):
+        biz["servesCuisine"] = lead["extra"]["cuisine"].replace(";", ", ")
+    graph = [biz]
+    if faq:
+        graph.append({"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [
+            {"@type": "Question", "name": f["q"], "acceptedAnswer": {"@type": "Answer", "text": f["a"]}} for f in faq]})
+    return faq, json.dumps(graph, ensure_ascii=False).replace("</", "<\\/")
+
+
 def render_mockup(lead: dict[str, Any], cfg: dict[str, Any], photos: list[str] | None = None, logo: str = "") -> str:
     spec = mockup_spec(lead, cfg)
     lang = spec["lang"]
     m = market(cfg, lead.get("market"))
     layout = "photo" if photos else spec["layout"]
+    hours = (lead.get("extra") or {}).get("opening_hours")
+    faq, jsonld = geo_markup(lead, cfg, lang, hours)
     return _env.get_template("mockups/onepage.html").render(
         lead=lead, spec=spec, layout=layout, photos=photos or [], logo=logo, lang=lang, t=STRINGS[lang],
-        hours=(lead.get("extra") or {}).get("opening_hours"),
+        hours=hours, faq=faq, jsonld=jsonld,
         whatsapp=whatsapp_number(lead.get("phone"), m.get("country_code")),
         business=cfg["business"],
     )
+
+
+AUDIT_STRINGS = {
+    "fr": {
+        "title": "Audit SEO & GEO", "kicker": "Audit SEO & GEO", "h1": "Visibilité Google et IA —",
+        "lede": "Ce que Google et les assistants IA (ChatGPT, Perplexity, Gemini) comprennent aujourd'hui de votre commerce, et ce qu'il faut corriger.",
+        "why": "Le GEO (Generative Engine Optimization) est le nouveau SEO : de plus en plus de clients demandent directement à une IA « quel est le meilleur {cat} à {city} ? ». Les IA citent les commerces dont le site est clair, structuré et vérifiable. Chaque point ci-dessous a été constaté sur votre site le {today}.",
+        "why_none": "Le GEO (Generative Engine Optimization) est le nouveau SEO : de plus en plus de clients demandent directement à une IA « quel est le meilleur {cat} à {city} ? ». Les IA s'appuient sur des sites clairs et structurés ; sans site trouvé à votre nom, elles n'ont aucune source officielle sur vous.",
+        "why_down": "Le GEO (Generative Engine Optimization) est le nouveau SEO : de plus en plus de clients demandent directement à une IA « quel est le meilleur {cat} à {city} ? ». Les IA s'appuient sur des sites clairs et structurés ; tant que votre site ne s'affiche plus, elles ne peuvent pas vous citer.",
+        "findings_title": "Nos recommandations, par ordre d'impact", "fix": "À faire :",
+        "fixed_by_redesign": "corrigé par la refonte (site rapide, mobile, sécurisé).",
+        "good_title": "Ce qui est déjà en place",
+        "cta": "Toutes ces recommandations sont mises en place dans le cadre de la refonte de votre site. Votre maquette est déjà prête : répondez « OUI » et je la mets en ligne à votre nom. Vous ne réglez qu'une fois le site en ligne et validé.",
+        "see_mockup": "Voir ma maquette", "email": "Répondre par email",
+        "footer": "Audit réalisé automatiquement à partir de votre page publique ; aucune donnée personnelle collectée.",
+        "passed": {"schema_local": "Données structurées de commerce local", "schema_faq": "FAQ structurée", "nap": "Nom, adresse et téléphone lisibles",
+                   "hours": "Horaires publiés", "meta_description": "Description pour Google", "title": "Titre de page bien calibré", "h1": "Titre principal (H1)",
+                   "lang": "Langue déclarée", "canonical": "URL canonique", "og": "Aperçu de partage", "content_depth": "Contenu suffisant",
+                   "ai_crawlers": "Robots des IA autorisés", "sitemap": "Plan du site (sitemap.xml)", "llms_txt": "Fichier llms.txt"},
+    },
+    "en": {
+        "title": "SEO & GEO audit", "kicker": "SEO & GEO audit", "h1": "Google & AI visibility —",
+        "lede": "What Google and AI assistants (ChatGPT, Perplexity, Gemini) understand about your business today, and what to fix.",
+        "why": "GEO (Generative Engine Optimization) is the new SEO: more and more customers ask an AI directly \"what's the best {cat} in {city}?\". AI assistants cite businesses whose website is clear, structured and verifiable. Every point below was checked on your site on {today}.",
+        "why_none": "GEO (Generative Engine Optimization) is the new SEO: more and more customers ask an AI directly \"what's the best {cat} in {city}?\". AI assistants rely on clear, structured websites; with no website found under your name, they have no official source about you.",
+        "why_down": "GEO (Generative Engine Optimization) is the new SEO: more and more customers ask an AI directly \"what's the best {cat} in {city}?\". AI assistants rely on clear, structured websites; while your site no longer loads, they can't cite you.",
+        "findings_title": "Our recommendations, by impact", "fix": "To do:",
+        "fixed_by_redesign": "fixed by the redesign (fast, mobile, secure site).",
+        "good_title": "Already in place",
+        "cta": "All these recommendations are implemented as part of your website redesign. Your mock-up is ready: reply \"YES\" and I'll put it live under your name. You only pay once the site is live and approved.",
+        "see_mockup": "See my mock-up", "email": "Reply by email",
+        "footer": "Audit run automatically on your public page; no personal data collected.",
+        "passed": {"schema_local": "Local-business structured data", "schema_faq": "Structured FAQ", "nap": "Readable name, address and phone",
+                   "hours": "Opening hours published", "meta_description": "Description for Google", "title": "Well-sized page title", "h1": "Main heading (H1)",
+                   "lang": "Language declared", "canonical": "Canonical URL", "og": "Sharing preview", "content_depth": "Enough content",
+                   "ai_crawlers": "AI crawlers allowed", "sitemap": "Sitemap", "llms_txt": "llms.txt file"},
+    },
+}
+
+
+def render_audit(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None = None) -> str:
+    """Rapport « Audit SEO & GEO » : faits constatés + recommandations, mis en œuvre dans la refonte."""
+    from datetime import date
+    from .audit import geo_findings, geo_score, issue_label
+    lang = market(cfg, lead.get("market")).get("language", "fr")
+    t = dict(AUDIT_STRINGS.get(lang, AUDIT_STRINGS["fr"]))
+    extra = lead.get("extra") or {}
+    geo = extra.get("geo")
+    codes = [i["code"] for i in lead.get("issues") or []]
+    has_site = bool(lead.get("website")) and bool(geo)
+    site_down = bool(lead.get("website")) and bool({"down", "expired", "parked", "listing"} & set(codes))
+    cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {}).get(lang) or ("commerce" if lang == "fr" else "business")
+    today = date.today().strftime("%d/%m/%Y" if lang == "fr" else "%d %b %Y")
+    t["why"] = t["why" if has_site else "why_down" if site_down else "why_none"].format(cat=cat, city=lead.get("city") or "", today=today)
+    findings = geo_findings(geo, lang, has_site=has_site, site_down=site_down)
+    site_issues = [issue_label(c, i.get("params", {}), lang) for c, i in ((i["code"], i) for i in lead.get("issues") or [])
+                   if c not in ("no_site",)] if lead.get("website") and not site_down else []
+    passed = [t["passed"][g["code"]] for g in geo or [] if g.get("ok") and g["code"] in t["passed"]]
+    score = geo_score(geo) if has_site else 0
+    color = "#c92a2a" if (score or 0) < 40 else "#b7791f" if score < 70 else "#2f7d4f"
+    return _env.get_template("mockups/audit.html").render(
+        lang=lang, t=t, lead=lead, business=cfg["business"], today=today, geo_score=score, score_color=color,
+        findings=findings, site_issues=site_issues[:4], passed=passed, mockup_url=mockup_url)
 
 
 def write_mockup(lead: dict[str, Any], cfg: dict[str, Any]) -> tuple[str, str | None]:
@@ -274,7 +378,10 @@ def write_mockup(lead: dict[str, Any], cfg: dict[str, Any]) -> tuple[str, str | 
     photos, logo = download_assets(spec, out) if (spec["photos"] or spec["logo"]) else ([], "")
     (out / "index.html").write_text(render_mockup(lead, cfg, photos, logo), encoding="utf-8")
     base = (cfg["business"].get("mockup_base_url") or "").rstrip("/")
-    return str(out / "index.html"), (f"{base}/{slug}/" if base else None)
+    url = f"{base}/{slug}/" if base else None
+    (out / "audit").mkdir(exist_ok=True)
+    (out / "audit" / "index.html").write_text(render_audit(lead, cfg, url), encoding="utf-8")
+    return str(out / "index.html"), url
 
 
 def write_landing(cfg: dict[str, Any]) -> str:
