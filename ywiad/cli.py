@@ -87,7 +87,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"Site prêt à déployer : {cfg['paths']['site']}")
     elif args.cmd == "outreach":
         mailer = Mailer(cfg)
-        budget = max(0, cfg["outreach"].get("daily_send_limit", 25) - db.emails_today())
+        budget = max(0, cfg["outreach"].get("daily_send_limit", 25) - db.emails_today() - pipeline.reserved_budget(db, cfg))
         fu = pipeline.step_followups(db, cfg, mailer, budget)
         print({**fu, **pipeline.step_outreach(db, cfg, mailer, budget - fu["followups"])})
     elif args.cmd == "queue":

@@ -187,14 +187,25 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
     fmt["platform"] = platform or ""
     intro = s["intro_site" if has_site else "intro_down" if site_down else "intro_social" if platform else "intro_none"].format(**fmt)
     no_site_sentence = s["social_phrase" if platform else "no_site_phrase"].format(**fmt)
+    quoted = (lead.get("extra") or {}).get("quoted") or {}
+    offers = geo_offers(cfg, lead.get("market"), lang)
+    if quoted.get("tier"):  # formule conseillée dans le premier email (la recommandation a pu évoluer)
+        recommended = next((t for t in tiers if t["short"] == quoted["tier"]), recommended)
+    if quoted.get("recommended") and quoted["recommended"] != recommended["price"]:
+        agency = recommended.get("agency") and {**recommended["agency"], "saving": None}
+        recommended = {**recommended, "price": quoted["recommended"], "agency": agency}
+    for i, price in enumerate(quoted.get("geo") or []):
+        if i < len(offers) and price != offers[i]["price"]:
+            offers[i] = {**offers[i], "price": price,
+                         "agency": offers[i].get("agency") and {**offers[i]["agency"], "saving": None}}
     return {
         "intro": intro,
         "audit_url": (mockup_url + "audit/") if mockup_url else None,
         "offer": (lead.get("extra") or {}).get("offer"),
         "geo_score": geo_score((lead.get("extra") or {}).get("geo")),
         "geo_top": geo_findings((lead.get("extra") or {}).get("geo"), lang)[:3],
-        "geo_offer": _geo_offer(cfg, lead, lang),
-        "geo_offers": geo_offers(cfg, lead.get("market"), lang),
+        "geo_offer": offers[0] if offers else None,
+        "geo_offers": offers,
         "cat": fmt["cat"], "un_cat": fmt["un_cat"], "a_cat": fmt["a_cat"], "city": fmt["city"],
         "geo_line": _geo_line(lead, s, has_site, site_down, lang),
         "platform": platform,

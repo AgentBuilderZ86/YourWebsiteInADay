@@ -494,7 +494,7 @@ def test_english_markets_focus(cfg):
     db.update_lead(1, status="qualified")
     cfg["outreach"]["reserve"] = {"NZ": 5}
     noon_paris = datetime(2026, 9, 29, 10, 0, tzinfo=timezone.utc)  # 23 h à Auckland
-    assert pipeline.reserved_budget(db, cfg, noon_paris) == 5
+    assert pipeline.reserved_budget(db, cfg, noon_paris) == 1  # plafonnée au nombre de leads prêts
     assert pipeline.reserved_budget(db, cfg, datetime(2026, 9, 29, 0, 10, tzinfo=timezone.utc)) == 0
 
 
@@ -518,3 +518,19 @@ def test_geo_hours_detects_english_formats():
         p = _PageParser(); p.feed(html)
         got = {g["code"]: g["ok"] for g in geo_checks(p, html)}
         assert got["hours"], text
+
+
+def test_followup_keeps_quoted_price(cfg):
+    from ywiad.db import DB
+    from ywiad.mailer import Mailer
+    db = DB(str(Path(cfg["paths"]["reports"]).parent / "quoted.sqlite"))
+    db.upsert_lead({"source": "t", "source_id": "q1", "name": "Zwin", "category": "cafe", "market": "MA",
+                    "email": "z@z.ma", "city": "Tanger", "website": "https://zwin.ma", "extra": {}})
+    db.update_lead(1, status="contacted", recommended_tier="standard", last_contact_at="2026-09-25T08:00:00+00:00",
+                   issues=[{"code": "expired", "penalty": 100, "params": {"host": "zwin.ma"}}])
+    mid = db.log_message(1, "initial", "email", "s", "  → Standard — Site professionnel : 6 990 MAD (livré en 72 h)  ← conseillé", "sent", "z@z.ma")
+    assert pipeline.quoted_prices(db, 1) == {"tier": "Standard", "recommended": "6 990 MAD"}
+    cfg["outreach"]["mode"] = "queue"
+    pipeline._dispatch(db, cfg, Mailer(cfg), db.get_lead(1), "followup_1", "s")
+    body = db.messages("queued")[0]["body"]
+    assert "6 990 MAD" in body and "9 900 MAD" not in body

@@ -105,9 +105,12 @@ def reserved_budget(db: DB, cfg: dict[str, Any], now: datetime | None = None) ->
     """Part du quota du jour gardée pour les marchés hors fenêtre maintenant (ex. Australie, envoyée la
     nuit UTC) qui ont des leads prêts : `outreach.reserve: {AU: 8, …}`."""
     reserve = cfg["outreach"].get("reserve") or {}
-    ready = {l.get("market") for l in db.leads("qualified") if l.get("email")}
-    return sum(n for code, n in reserve.items()
-               if code in ready and can_email_market(cfg, code)[0] and not in_send_window(cfg, code, now))
+    ready: dict[str, int] = {}
+    for l in db.leads("qualified"):
+        if l.get("email"):
+            ready[l.get("market")] = ready.get(l.get("market"), 0) + 1
+    return sum(min(n, ready.get(code, 0)) for code, n in reserve.items()
+               if can_email_market(cfg, code)[0] and not in_send_window(cfg, code, now))
 
 
 def step_audit(db: DB, cfg: dict[str, Any], auditor: Callable[..., Any] = audit_url, workers: int = 8) -> dict[str, int]:
@@ -235,10 +238,30 @@ def preview_url(lead: dict[str, Any], cfg: dict[str, Any]) -> str | None:
     return f"{url}preview.jpg" if url and preview_path(lead, cfg).exists() else None
 
 
+_QUOTED_TIER = re.compile(r"^\s*→ (.+?) — .+? ?: (.+?) \((?:livré en|live in) ", re.M)
+_QUOTED_GEO = re.compile(r"^\s*\d\. .+? ?: (.+?) \((?:livré en|delivered in) ", re.M)
+
+
+def quoted_prices(db: DB, lead_id: int) -> dict[str, Any] | None:
+    """Prix annoncés dans le premier email envoyé (offre conseillée, offres GEO 1/2)."""
+    row = db.conn.execute("SELECT body FROM messages WHERE lead_id=? AND kind='initial' AND status='sent' "
+                          "ORDER BY id LIMIT 1", (lead_id,)).fetchone()
+    if not row or not row[0]:
+        return None
+    tier, geo = _QUOTED_TIER.search(row[0]), _QUOTED_GEO.findall(row[0])
+    quoted = {k: v for k, v in (("tier", tier.group(1).strip() if tier else None),
+                                ("recommended", tier.group(2).strip() if tier else None), ("geo", geo or None)) if v}
+    return quoted or None
+
+
 def _dispatch(db: DB, cfg: dict[str, Any], mailer: Mailer, lead: dict[str, Any], kind: str,
               original_subject: str = "") -> None:
     """Envoi direct (smtp) ou mise en file (queue) pour envoi par Claude via Gmail."""
     url = mockup_url(lead, cfg)
+    if kind != "initial":
+        quoted = quoted_prices(db, lead["id"])
+        if quoted:  # prix annoncé = prix tenu, même si la grille a changé depuis
+            lead = {**lead, "extra": {**(lead.get("extra") or {}), "quoted": quoted}}
     subject, body = render_email(kind, lead, cfg, mockup_url=url, original_subject=original_subject)
     html = render_email_html(kind, lead, cfg, mockup_url=url, preview_url=preview_url(lead, cfg),
                              original_subject=original_subject)
