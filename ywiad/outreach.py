@@ -301,7 +301,7 @@ def _render_paragraphs_html(template: str, ctx: dict[str, Any], cfg: dict[str, A
 
     def fmt(block: str) -> Markup:
         rows = [r.strip() for r in block.split("\n") if r.strip()]
-        if any(r.startswith(("•", "–")) for r in rows):  # listes : une ligne par puce
+        if any(r.startswith(("•", "–")) or re.match(r"\d+\. ", r) for r in rows):  # listes : une ligne par élément
             return Markup("<br>").join(_linkify(r) for r in rows)
         return _linkify(" ".join(rows))
     ctx.update(paragraphs=[fmt(b) for b in blocks], show_mockup=kind != "followup_3",

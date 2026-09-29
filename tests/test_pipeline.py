@@ -509,3 +509,12 @@ def test_postal_address_private_and_only_where_required(cfg, monkeypatch):
     from ywiad.outreach import render_email
     assert "PO Box 1" in render_email("initial", lead, c)[1]
     assert "PO Box 1" not in render_email("initial", {**lead, "market": "FR"}, c)[1]
+
+
+def test_geo_hours_detects_english_formats():
+    from ywiad.audit import geo_checks, _PageParser
+    for text in ("Hours: Daily 11.30am - 8.30pm", "Open 7 days, 9am to 5pm", "Mon - Fri 8:00 - 17:00"):
+        html = f"<html><head><title>X</title></head><body><p>{text}</p></body></html>"
+        p = _PageParser(); p.feed(html)
+        got = {g["code"]: g["ok"] for g in geo_checks(p, html)}
+        assert got["hours"], text

@@ -342,7 +342,7 @@ def geo_checks(p: "_PageParser", html: str) -> list[dict[str, Any]]:
         ("schema_local", any(t in ld for t in LOCAL_TYPES)),
         ("schema_faq", "faqpage" in ld),
         ("nap", has_phone and has_address),
-        ("hours", "openinghours" in ld or bool(re.search(r"horaires|opening hours|ouvert|lundi|mardi|mercredi|jeudi|vendredi|samedi|monday|tuesday|saturday|\\b\\d{1,2}h(?:\\d{2})?\\b", low))),
+        ("hours", "openinghours" in ld or bool(re.search(r"horaires|opening hours|trading hours|business hours|\bhours\b|\bopen (?:daily|7 days|every day)|ouvert|lundi|mardi|mercredi|jeudi|vendredi|samedi|dimanche|monday|tuesday|wednesday|thursday|friday|saturday|sunday|\bdaily\b|\b(?:mon|tue|wed|thu|fri|sat|sun)\s*[-–:]|\b\d{1,2}h(?:\d{2})?\b|\b\d{1,2}(?:[.:]\d{2})?\s*(?:am|pm)\b", low))),
         ("meta_description", bool(p.meta.get("description", "").strip())),
         ("title", 10 <= len(p.title.strip()) <= 70),
         ("h1", p.h1 >= 1),
