@@ -43,6 +43,7 @@ def no_dns(monkeypatch):
 def cfg(tmp_path):
     c = load_config("config.example.yaml")
     c["business"]["postal_address"] = ""  # jamais la vraie adresse (base locale) dans les tests
+    c["outreach"]["first_touch"] = "full"  # format complet testé ici ; le court a son propre test
     c["paths"] = {k: str(tmp_path / k) for k in ("outbox", "mockups", "reports", "site")}
     c["paths"]["database"] = ":memory:"
     return c
@@ -402,6 +403,7 @@ def test_social_only_email_names_the_platform():
     from ywiad.config import load_config
     from ywiad.outreach import render_email, render_email_html
     cfg = load_config()
+    cfg["outreach"]["first_touch"] = "full"
     lead = {"id": 1, "name": "Chez Lulu", "category": "restaurant", "market": "FR", "city": "Lyon",
             "website": None, "email": "lulu@example.fr", "score": 0, "recommended_tier": "standard",
             "issues": [{"code": "no_site", "penalty": 100, "params": {}}],
@@ -541,3 +543,20 @@ def test_real_site_with_domain_title_is_not_parked():
     text = "Accueil Le salon Soins visage Epilation Ongles Contact 0478791335 shebeautelyon@gmail.com " * 5
     assert not is_parking_page("shebeaute.fr", text, "shebeaute.fr")
     assert is_parking_page("example-shop.fr", "Welcome", "www.example-shop.fr")
+
+
+def test_short_first_touch_with_launch_offer(cfg):
+    from ywiad.outreach import render_email, render_email_html, render_whatsapp
+    cfg["outreach"]["first_touch"] = "short"
+    lead = {"id": 3, "name": "Zwin Café", "category": "cafe", "market": "MA", "city": "Tanger", "email": "z@z.ma",
+            "website": None, "score": 0, "issues": [{"code": "no_site", "penalty": 100, "params": {}}], "extra": {}}
+    subject, body = render_email("initial", lead, cfg, mockup_url="https://x/y/")
+    assert subject == "Une maquette de site pour Zwin Café"
+    assert "5 premiers clients" in body and "14 jours" in body and "à partir de 3 990 MAD" in body
+    assert "Voulez-vous que je l'adapte" in body and "Premium" not in body  # pas de grille de prix
+    html = render_email_html("initial", lead, cfg, mockup_url="https://x/y/")
+    assert "<table" not in html and "5 premiers clients" in html and 'href="https://x/y/"' in html
+    assert "loi 09-08" in html  # mentions légales conservées
+    assert "premiers clients" in render_whatsapp(lead, cfg, "https://x/y/")
+    cfg["outreach"]["launch_offer"]["enabled"] = False
+    assert "premiers clients" not in render_email("initial", lead, cfg, mockup_url="https://x/y/")[1]

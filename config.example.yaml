@@ -321,6 +321,12 @@ outreach:
   # Jours d'envoi (0 = lundi … 6 = dimanche) : les commerçants travaillent le samedi
   send_weekdays: [0, 1, 2, 3, 4, 5]
   followup_days: [2, 5, 10]
+  # Premier contact : "short" = email personnel court (maquette + une question, pas de grille de prix),
+  # "full" = ancienne présentation complète avec audit et formules.
+  first_touch: short
+  # Offre de lancement (premiers clients) : site en ligne N jours sans payer, réglé seulement s'il est gardé.
+  # À désactiver une fois `slots` clients signés.
+  launch_offer: { enabled: true, slots: 5, trial_days: 14 }
   smtp:
     host: "smtp.gmail.com"
     port: 587

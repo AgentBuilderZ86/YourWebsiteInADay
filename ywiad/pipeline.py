@@ -488,7 +488,9 @@ def whatsapp_page(db: DB, cfg: dict[str, Any]) -> str:
     from html import escape as esc
     from urllib.parse import quote
     rows = []
-    for lead in db.leads("no_contact"):
+    # Prospects sans email + prospects déjà relancés par email sans réponse (WhatsApp répond bien mieux au Maroc)
+    emailed = [l for l in db.leads("contacted") if (l.get("followups_sent") or 0) >= 1]
+    for lead in db.leads("no_contact") + emailed:
         if lead.get("market") not in WHATSAPP_MARKETS or db.is_opted_out(lead.get("email") or ""):
             continue
         num = _intl_phone(lead.get("phone"), "212")
@@ -496,10 +498,11 @@ def whatsapp_page(db: DB, cfg: dict[str, Any]) -> str:
             continue
         mobile = num[3] in "67"
         msg = render_whatsapp(lead, cfg, mockup_url(lead, cfg))
-        rows.append((not mobile, -(lead.get("priority") or 0), lead, num, mobile, msg))
-    rows.sort(key=lambda r: (r[0], r[1]))
+        # Ordre : mobiles d'abord, prospects déjà relancés par email en tête (ils connaissent la maquette)
+        rows.append((not mobile, lead["status"] != "contacted", -(lead.get("priority") or 0), lead, num, mobile, msg))
+    rows.sort(key=lambda r: (r[0], r[1], r[2]))
     items = []
-    for _, _, lead, num, mobile, msg in rows:
+    for _, _, _, lead, num, mobile, msg in rows:
         cat = cfg["prospecting"]["categories"].get(lead.get("category") or "", {}).get("fr", "")
         action = (f'<a class="btn wa" href="https://wa.me/{num}?text={quote(msg)}">WhatsApp</a>' if mobile
                   else f'<a class="btn tel" href="tel:+{num}">Appeler (fixe)</a>')

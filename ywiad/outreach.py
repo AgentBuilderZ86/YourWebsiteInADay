@@ -158,6 +158,18 @@ def _geo_offer(cfg: dict[str, Any], lead: dict[str, Any], lang: str) -> dict[str
     return offers[0] if offers else None
 
 
+def _launch_offer(cfg: dict[str, Any]) -> dict[str, Any] | None:
+    """Offre de lancement (premiers clients) : site en ligne N jours sans payer, réglé seulement s'il est gardé."""
+    lo = cfg["outreach"].get("launch_offer") or {}
+    return {"slots": lo.get("slots", 5), "days": lo.get("trial_days", 14)} if lo.get("enabled") else None
+
+
+def _first_touch_kind(cfg: dict[str, Any], kind: str, offer: str | None) -> str:
+    """Premier contact court (une question, pas de grille de prix) sauf offre GEO."""
+    short = cfg["outreach"].get("first_touch", "short") == "short"
+    return "initial_short" if kind == "initial" and short and offer != "geo" else kind
+
+
 def _geo_line(lead: dict[str, Any], s: dict[str, Any], has_site: bool, site_down: bool, lang: str) -> str:
     """Phrase d'accroche de l'audit SEO & GEO (chiffres issus de l'audit réel)."""
     geo = (lead.get("extra") or {}).get("geo")
@@ -224,6 +236,8 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
         "tiers": tiers,
         "recommended": recommended,
         "audit_value": (agency_benchmark(m, "audit") or {}).get("range"),
+        "launch": _launch_offer(cfg),
+        "emailed": lead.get("status") in ("contacted", "replied"),
         "geo_credit_days": cfg["pricing"].get("geo_credit_days"),
         "s": s,
         "mockup_url": mockup_url,
@@ -238,6 +252,7 @@ def render_email(kind: str, lead: dict[str, Any], cfg: dict[str, Any], *,
     ctx["original_subject"] = original_subject
     lang = ctx["market"].get("language", "fr")
     suffix = "_geo" if ctx.get("offer") == "geo" else ""
+    kind = _first_touch_kind(cfg, kind, ctx.get("offer"))
     raw = _env.get_template(f"emails/{lang}/{kind}{suffix}.txt").render(**ctx)
     # trim_blocks peut coller le séparateur à la ligne du sujet : on découpe sur "---\n"
     subject, _, body = raw.partition("---\n")
@@ -286,6 +301,11 @@ def render_email_html(kind: str, lead: dict[str, Any], cfg: dict[str, Any], *, m
                phone=_phone(lead, cfg, lang, ctx["category_label"]))
     if ctx.get("offer") == "geo":
         return _render_paragraphs_html("emails/html/geo.html", ctx, cfg, text, kind)
+    if _first_touch_kind(cfg, kind, ctx.get("offer")) == "initial_short":
+        # Premier contact : un email personnel, sans mise en page (meilleure délivrabilité, plus de réponses)
+        rows = [b for b in text.split("\n\n") if b.strip()]
+        ctx.update(subject=subject, paragraphs=[Markup("<br>").join(_linkify(r) for r in b.strip().split("\n")) for b in rows])
+        return _html_env.get_template("emails/html/plain.html").render(**ctx)
     if kind == "initial":
         score = ctx["score"] or 0
         ctx["score"] = score

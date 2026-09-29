@@ -1,0 +1,19 @@
+{% if has_site or site_down %}{{ lead.name }}: {{ hook }}{% else %}A website mock-up for {{ lead.name }}{% endif %}
+---
+Hi,
+
+{% if site_down %}While looking for {{ a_cat }} in {{ city }}, I tried to visit {{ lead.name }}'s website ({{ host }}), but it no longer loads.{% elif has_site %}While looking for {{ a_cat }} in {{ city }}, I came across {{ lead.name }}'s website: {{ hook }}.{% elif platform %}While looking for {{ a_cat }} in {{ city }}, I found {{ lead.name }} on {{ platform }}, but no website of your own.{% else %}While looking for {{ a_cat }} in {{ city }}, I found {{ lead.name }}, but no website of your own.{% endif %}
+
+
+I put together a free mock-up of what your website could look like:
+{{ mockup_url }}
+
+{% if launch %}
+I'm launching my studio and looking for my first {{ launch.slots }} clients: I'll put the site live under your name for {{ launch.days }} days at no cost. You only pay if you keep it (from {{ tiers[0].price }}).
+{% else %}
+I can put it live under your name in {{ tiers[0].delivery }} (from {{ tiers[0].price }}); you only pay once you've approved it.
+{% endif %}
+
+Would you like me to tailor it to {{ lead.name }}?
+
+{% include "emails/en/_signature.txt" %}

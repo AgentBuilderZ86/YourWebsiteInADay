@@ -56,6 +56,19 @@ scripts/state.sh pull
   - Intention d'acheter / de payer / de signer → répondre qu'AZ revient vers lui dans la journée, et
     envoyer à azriouil.az@gmail.com un email « [CLOSING] <commerce> — <offre> — <prix> » avec le fil.
 
+**Stratégie v2 (29/09) — décrocher les premiers clients.** Bilan des 4 premiers jours : 61 emails, 0 réponse ;
+quelques WhatsApp, 2 réponses. On adapte :
+  - Premier email court et personnel (`outreach.first_touch: short`) : le problème constaté, la maquette, l'offre
+    de lancement, une question. Pas de grille de prix ni de mise en page : il doit ressembler à un email écrit à
+    la main (meilleure délivrabilité). Les formules et prix arrivent dans la réponse ou la relance.
+  - Offre de lancement (`outreach.launch_offer`, 5 premiers clients) : site en ligne à son nom 14 jours sans
+    payer, réglé seulement s'il le garde (tarif de la grille, ou tarif déjà annoncé). Sur un « oui » : mettre la
+    maquette en ligne sous son nom (sous-domaine Netlify), prévenir AZ par « [CLOSING] », relancer à J+10.
+    Désactiver l'offre dès 5 clients signés.
+  - Maroc : WhatsApp d'abord. La page `out/reports/whatsapp.html` liste en tête les prospects déjà relancés par
+    email sans réponse, puis ceux sans email ; AZ en envoie 15 à 20 par jour depuis son téléphone.
+  - Mesurer chaque semaine réponses / envois par canal et par marché, et couper ce qui ne répond pas.
+
 **Objectif : clôturer vite.** Toute réponse non négative est traitée dans l'heure (veille horaire) :
   - « OUI » / « ça m'intéresse » sans autre question = intention d'achat : remercier, confirmer l'offre
     conseillée et son prix, annoncer la mise en ligne sous le délai de l'offre dès validation, demander
