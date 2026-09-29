@@ -534,3 +534,10 @@ def test_followup_keeps_quoted_price(cfg):
     pipeline._dispatch(db, cfg, Mailer(cfg), db.get_lead(1), "followup_1", "s")
     body = db.messages("queued")[0]["body"]
     assert "6 990 MAD" in body and "9 900 MAD" not in body
+
+
+def test_real_site_with_domain_title_is_not_parked():
+    from ywiad.content import is_parking_page
+    text = "Accueil Le salon Soins visage Epilation Ongles Contact 0478791335 shebeautelyon@gmail.com " * 5
+    assert not is_parking_page("shebeaute.fr", text, "shebeaute.fr")
+    assert is_parking_page("example-shop.fr", "Welcome", "www.example-shop.fr")

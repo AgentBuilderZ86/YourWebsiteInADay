@@ -39,7 +39,9 @@ def is_parking_page(title: str, text: str, host: str) -> bool:
         return True
     bare = host.lower().removeprefix("www.")
     # Titre = nom de domaine nu, avec très peu de contenu : page par défaut d'hébergeur
-    return bool(bare) and title.strip().lower().removeprefix("www.") == bare and len(text) < 2500
+    # (un vrai site peut garder le domaine pour titre : il a alors du contenu et des coordonnées)
+    has_contact = "@" in text or bool(re.search(r"(?:\+\d{2,3}|\b0)\s?[1-9](?:[\s.-]?\d{2}){4}", text))
+    return bool(bare) and title.strip().lower().removeprefix("www.") == bare and len(text) < 800 and not has_contact
 
 
 class _ContentParser(HTMLParser):
