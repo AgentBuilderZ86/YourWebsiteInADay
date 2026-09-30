@@ -86,10 +86,7 @@ def main(argv: list[str] | None = None) -> int:
         pipeline.step_mockups(db, cfg)
         print(f"Site prêt à déployer : {cfg['paths']['site']}")
     elif args.cmd == "outreach":
-        mailer = Mailer(cfg)
-        budget = max(0, cfg["outreach"].get("daily_send_limit", 25) - db.emails_today() - pipeline.reserved_budget(db, cfg))
-        fu = pipeline.step_followups(db, cfg, mailer, budget)
-        print({**fu, **pipeline.step_outreach(db, cfg, mailer, budget - fu["followups"])})
+        print(pipeline.step_send(db, cfg, Mailer(cfg)))
     elif args.cmd == "queue":
         msgs = [{**{k: m[k] for k in ("id", "lead_id", "kind", "to_addr", "subject", "body")}, "html_body": m["html"],
                  "reply_thread_id": db.lead_thread(m["lead_id"]) if m["kind"] != "initial" else None}

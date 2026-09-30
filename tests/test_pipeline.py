@@ -498,6 +498,9 @@ def test_english_markets_focus(cfg):
     noon_paris = datetime(2026, 9, 29, 10, 0, tzinfo=timezone.utc)  # 23 h à Auckland
     assert pipeline.reserved_budget(db, cfg, noon_paris) == 1  # plafonnée au nombre de leads prêts
     assert pipeline.reserved_budget(db, cfg, datetime(2026, 9, 29, 0, 10, tzinfo=timezone.utc)) == 0
+    # dans sa fenêtre, la part réservée est protégée des relances des autres marchés
+    assert pipeline.reserved_budget(db, cfg, datetime(2026, 9, 29, 0, 10, tzinfo=timezone.utc), in_window=True) == 1
+    assert pipeline.reserved_budget(db, cfg, noon_paris, in_window=True) == 0
 
 
 def test_postal_address_private_and_only_where_required(cfg, monkeypatch):
