@@ -101,18 +101,16 @@ def market_weight(cfg: dict[str, Any], lead: dict[str, Any]) -> float:
     return market(cfg, lead.get("market")).get("priority_weight", 1.0)
 
 
-def reserved_budget(db: DB, cfg: dict[str, Any], now: datetime | None = None, *, in_window: bool = False) -> int:
-    """Part du quota du jour gardée pour les marchés de `outreach.reserve: {US: 6, …}` qui ont des leads
-    prêts. Par défaut : ceux hors fenêtre maintenant (envoyés à un autre créneau). Avec in_window=True :
-    ceux dans leur fenêtre maintenant, que les relances ne doivent pas consommer avant leurs premiers
-    contacts."""
+def reserved_budget(db: DB, cfg: dict[str, Any], now: datetime | None = None) -> int:
+    """Part du quota du jour gardée pour les marchés de `outreach.reserve: {US: 6, …}` hors fenêtre
+    maintenant (envoyés à un autre créneau) qui ont des leads prêts."""
     reserve = cfg["outreach"].get("reserve") or {}
     ready: dict[str, int] = {}
     for l in db.leads("qualified"):
         if l.get("email"):
             ready[l.get("market")] = ready.get(l.get("market"), 0) + 1
     return sum(min(n, ready.get(code, 0)) for code, n in reserve.items()
-               if can_email_market(cfg, code)[0] and in_send_window(cfg, code, now) == in_window)
+               if can_email_market(cfg, code)[0] and not in_send_window(cfg, code, now))
 
 
 def step_audit(db: DB, cfg: dict[str, Any], auditor: Callable[..., Any] = audit_url, workers: int = 8) -> dict[str, int]:
@@ -308,9 +306,11 @@ def step_followups(db: DB, cfg: dict[str, Any], mailer: Mailer, budget: int,
 
 
 def step_outreach(db: DB, cfg: dict[str, Any], mailer: Mailer, budget: int,
-                  now: datetime | None = None) -> dict[str, int]:
+                  now: datetime | None = None, markets: set[str] | None = None) -> dict[str, int]:
     stats = {"emails": 0, "whatsapp": 0}
     for lead in db.leads("qualified"):  # triés par priorité décroissante
+        if markets is not None and lead.get("market") not in markets:
+            continue
         if not lead.get("email"):
             db.log_message(lead["id"], "initial", "whatsapp", "", render_whatsapp(lead, cfg, mockup_url(lead, cfg)), "draft")
             db.update_lead(lead["id"], status="no_contact")
@@ -327,9 +327,17 @@ def step_outreach(db: DB, cfg: dict[str, Any], mailer: Mailer, budget: int,
 def step_send(db: DB, cfg: dict[str, Any], mailer: Mailer, now: datetime | None = None) -> dict[str, int]:
     """Relances puis premiers contacts dans le quota du jour, moins la part réservée aux autres créneaux."""
     budget = max(0, cfg["outreach"].get("daily_send_limit", 25) - db.emails_today() - reserved_budget(db, cfg, now))
-    # les relances ne prennent pas la part réservée aux marchés prioritaires ouverts en ce moment
-    fu = step_followups(db, cfg, mailer, budget - min(budget, reserved_budget(db, cfg, now, in_window=True)), now)
-    return {**fu, **step_outreach(db, cfg, mailer, budget - fu["followups"], now)}
+    # 1. premiers contacts des marchés prioritaires ouverts en ce moment, dans la limite de leur réserve
+    stats = {"emails": 0, "whatsapp": 0}
+    for code, n in (cfg["outreach"].get("reserve") or {}).items():
+        if budget > 0 and can_email_market(cfg, code)[0] and in_send_window(cfg, code, now):
+            got = step_outreach(db, cfg, mailer, min(n, budget), now, markets={code})
+            stats = {k: stats[k] + got[k] for k in stats}
+            budget -= got["emails"]
+    # 2. relances, puis 3. premiers contacts des autres marchés
+    fu = step_followups(db, cfg, mailer, budget, now)
+    rest = step_outreach(db, cfg, mailer, budget - fu["followups"], now)
+    return {**fu, **{k: stats[k] + rest[k] for k in stats}}
 
 
 # --- retours de l'envoi (appelés par Claude après chaque envoi Gmail) -----
