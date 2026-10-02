@@ -240,6 +240,8 @@ def preview_url(lead: dict[str, Any], cfg: dict[str, Any]) -> str | None:
 
 _QUOTED_TIER = re.compile(r"^\s*→ (.+?) — .+? ?: (.+?) \((?:livré en|live in) ", re.M)
 _QUOTED_GEO = re.compile(r"^\s*\d\. .+? ?: (.+?) \((?:livré en|delivered in) ", re.M)
+_QUOTED_TIERS = re.compile(r"^\s*(?:→ )?(\S+) — .+? ?: (.+?) \((?:livré en|live in) ", re.M)
+_QUOTED_FROM = re.compile(r"\((?:à partir de|from) ([^)]+)\)")
 
 
 def quoted_prices(db: DB, lead_id: int) -> dict[str, Any] | None:
@@ -249,8 +251,12 @@ def quoted_prices(db: DB, lead_id: int) -> dict[str, Any] | None:
     if not row or not row[0]:
         return None
     tier, geo = _QUOTED_TIER.search(row[0]), _QUOTED_GEO.findall(row[0])
+    # toutes les formules de la grille, ou le « à partir de » du premier contact court
+    prices = {short: price.strip() for short, price in _QUOTED_TIERS.findall(row[0])}
+    start = _QUOTED_FROM.search(row[0]) if not prices else None
     quoted = {k: v for k, v in (("tier", tier.group(1).strip() if tier else None),
-                                ("recommended", tier.group(2).strip() if tier else None), ("geo", geo or None)) if v}
+                                ("recommended", tier.group(2).strip() if tier else None), ("geo", geo or None),
+                                ("prices", prices or None), ("from", start.group(1).strip() if start else None)) if v}
     return quoted or None
 
 

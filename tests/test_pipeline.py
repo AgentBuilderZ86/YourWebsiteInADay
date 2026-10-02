@@ -545,11 +545,35 @@ def test_followup_keeps_quoted_price(cfg):
     db.update_lead(1, status="contacted", recommended_tier="standard", last_contact_at="2026-09-25T08:00:00+00:00",
                    issues=[{"code": "expired", "penalty": 100, "params": {"host": "zwin.ma"}}])
     mid = db.log_message(1, "initial", "email", "s", "  → Standard — Site professionnel : 6 990 MAD (livré en 72 h)  ← conseillé", "sent", "z@z.ma")
-    assert pipeline.quoted_prices(db, 1) == {"tier": "Standard", "recommended": "6 990 MAD"}
+    assert pipeline.quoted_prices(db, 1) == {"tier": "Standard", "recommended": "6 990 MAD",
+                                             "prices": {"Standard": "6 990 MAD"}}
     cfg["outreach"]["mode"] = "queue"
     pipeline._dispatch(db, cfg, Mailer(cfg), db.get_lead(1), "followup_1", "s")
     body = db.messages("queued")[0]["body"]
     assert "6 990 MAD" in body and "9 900 MAD" not in body
+
+
+def test_followup_2_keeps_quoted_entry_price(cfg):
+    """La relance 2 cite la formule d'entrée : c'est le prix du premier email, pas celui de la grille actuelle."""
+    from ywiad.db import DB
+    from ywiad.mailer import Mailer
+    db = DB(str(Path(cfg["paths"]["reports"]).parent / "quoted2.sqlite"))
+    for i, (sid, body) in enumerate([
+            ("g1", "  Basique — Site vitrine express : 2 990 MAD (livré en 24 h)\n"
+                   "→ Standard — Site professionnel : 6 990 MAD (livré en 72 h)  ← conseillé"),
+            ("g2", "Vous ne réglez que si vous le gardez (à partir de 2 500 MAD).")], start=1):
+        db.upsert_lead({"source": "t", "source_id": sid, "name": f"Zwin {i}", "category": "cafe", "market": "MA",
+                        "email": f"z{i}@z.ma", "city": "Tanger", "website": None, "extra": {}})
+        db.update_lead(i, status="contacted", recommended_tier="standard", last_contact_at="2026-09-25T08:00:00+00:00",
+                       issues=[{"code": "no_site", "penalty": 100, "params": {}}])
+        db.log_message(i, "initial", "email", "s", body, "sent", f"z{i}@z.ma")
+    assert pipeline.quoted_prices(db, 2) == {"from": "2 500 MAD"}
+    cfg["outreach"]["mode"] = "queue"
+    for i in (1, 2):
+        pipeline._dispatch(db, cfg, Mailer(cfg), db.get_lead(i), "followup_2", "s")
+    bodies = [m["body"] for m in db.messages("queued")]
+    assert "démarre à 2 990 MAD" in bodies[0] and "démarre à 2 500 MAD" in bodies[1]
+    assert not any("3 990 MAD" in b for b in bodies)
 
 
 def test_real_site_with_domain_title_is_not_parked():

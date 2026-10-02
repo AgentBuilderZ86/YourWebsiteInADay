@@ -201,6 +201,13 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
     no_site_sentence = s["social_phrase" if platform else "no_site_phrase"].format(**fmt)
     quoted = (lead.get("extra") or {}).get("quoted") or {}
     offers = geo_offers(cfg, lead.get("market"), lang)
+    if quoted.get("prices") or quoted.get("from"):  # prix de la grille annoncés dans le premier email
+        prices = dict(quoted.get("prices") or {})
+        if quoted.get("from"):
+            prices.setdefault(tiers[0]["short"], quoted["from"])
+        tiers = [{**t, "price": prices[t["short"]], "agency": t.get("agency") and {**t["agency"], "saving": None}}
+                 if t["short"] in prices and prices[t["short"]] != t["price"] else t for t in tiers]
+        recommended = next((t for t in tiers if t["short"] == recommended["short"]), recommended)
     if quoted.get("tier"):  # formule conseillée dans le premier email (la recommandation a pu évoluer)
         recommended = next((t for t in tiers if t["short"] == quoted["tier"]), recommended)
     if quoted.get("recommended") and quoted["recommended"] != recommended["price"]:
