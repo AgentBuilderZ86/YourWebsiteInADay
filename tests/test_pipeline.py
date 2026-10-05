@@ -536,6 +536,16 @@ def test_geo_hours_detects_english_formats():
         assert got["hours"], text
 
 
+def test_geo_nap_detects_north_american_formats():
+    from ywiad.audit import geo_checks, _PageParser
+    for text in ("2410 Kingsway, Vancouver BC V5N 2T5 - Call (604) 565-4666",
+                 "Visit us at 120 Main Street, Austin TX 78701. Phone 512-555-0142"):
+        html = f"<html><head><title>X</title></head><body><p>{text}</p></body></html>"
+        p = _PageParser(); p.feed(html)
+        got = {g["code"]: g["ok"] for g in geo_checks(p, html)}
+        assert got["nap"], text
+
+
 def test_followup_keeps_quoted_price(cfg):
     from ywiad.db import DB
     from ywiad.mailer import Mailer

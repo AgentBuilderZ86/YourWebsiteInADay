@@ -335,9 +335,12 @@ def geo_checks(p: "_PageParser", html: str) -> list[dict[str, Any]]:
     ld = " ".join(p.jsonld).lower()
     text = " ".join(p.text.split())
     low = text.lower() + " " + ld
-    has_phone = any(h.startswith("tel:") for h in p.links) or bool(re.search(r"(?:\+\d{2,3}|\b0)\s?[1-9](?:[\s.-]?\d{2}){4}", text))
-    has_address = bool(re.search(r"\b\d{4,5}\b", text)) and bool(re.search(
-        r"\b(rue|avenue|av\.|boulevard|bd|place|quai|chemin|route|allée|street|st\.|road|rd|derb|lot|résidence)\b", low))
+    has_phone = any(h.startswith("tel:") for h in p.links) or bool(re.search(
+        r"(?:\+\d{2,3}|\b0)\s?[1-9](?:[\s.-]?\d{2}){4}|\(?\b[2-9]\d{2}\)?[\s.-]\d{3}[\s.-]\d{4}\b", text))
+    # Code postal canadien (A1A 1A1), ou code postal FR/MA/US (4-5 chiffres) plus un mot de voie.
+    has_address = bool(re.search(r"\b[A-Z]\d[A-Z] ?\d[A-Z]\d\b", text)) or bool(re.search(r"\b\d{4,5}\b", text)) and bool(re.search(
+        r"\b(rue|avenue|av\.|ave|boulevard|bd|blvd|place|quai|chemin|route|allée|street|st\.|road|rd|drive|dr\.|way|lane"
+        r"|derb|lot|résidence)\b", low))
     checks = [
         ("schema_local", any(t in ld for t in LOCAL_TYPES)),
         ("schema_faq", "faqpage" in ld),
