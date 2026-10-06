@@ -210,6 +210,8 @@ def _context(lead: dict[str, Any], cfg: dict[str, Any], mockup_url: str | None) 
         recommended = next((t for t in tiers if t["short"] == recommended["short"]), recommended)
     if quoted.get("tier"):  # formule conseillée dans le premier email (la recommandation a pu évoluer)
         recommended = next((t for t in tiers if t["short"] == quoted["tier"]), recommended)
+    elif quoted.get("from") and not quoted.get("prices"):  # seul le « à partir de » a été annoncé : on relance sur cette formule
+        recommended = tiers[0]
     if quoted.get("recommended") and quoted["recommended"] != recommended["price"]:
         agency = recommended.get("agency") and {**recommended["agency"], "saving": None}
         recommended = {**recommended, "price": quoted["recommended"], "agency": agency}

@@ -584,6 +584,9 @@ def test_followup_2_keeps_quoted_entry_price(cfg):
     bodies = [m["body"] for m in db.messages("queued")]
     assert "démarre à 2 990 MAD" in bodies[0] and "démarre à 2 500 MAD" in bodies[1]
     assert not any("3 990 MAD" in b for b in bodies)
+    pipeline._dispatch(db, cfg, Mailer(cfg), db.get_lead(2), "followup_1", "s")
+    relance = db.messages("queued")[-1]["body"]  # seul le « à partir de » a été annoncé : la relance reste sur cette formule
+    assert "offre Basique (2 500 MAD" in relance and "Standard" not in relance
 
 
 def test_real_site_with_domain_title_is_not_parked():
