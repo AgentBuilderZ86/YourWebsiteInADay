@@ -539,7 +539,8 @@ def test_geo_hours_detects_english_formats():
 def test_geo_nap_detects_north_american_formats():
     from ywiad.audit import geo_checks, _PageParser
     for text in ("2410 Kingsway, Vancouver BC V5N 2T5 - Call (604) 565-4666",
-                 "Visit us at 120 Main Street, Austin TX 78701. Phone 512-555-0142"):
+                 "Visit us at 120 Main Street, Austin TX 78701. Phone 512-555-0142",
+                 "1900 Piedmont Circle, NE Atlanta, GA 30324 PHONE (404) 876-4400"):
         html = f"<html><head><title>X</title></head><body><p>{text}</p></body></html>"
         p = _PageParser(); p.feed(html)
         got = {g["code"]: g["ok"] for g in geo_checks(p, html)}

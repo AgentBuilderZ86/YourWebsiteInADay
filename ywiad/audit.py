@@ -340,6 +340,7 @@ def geo_checks(p: "_PageParser", html: str) -> list[dict[str, Any]]:
     # Code postal canadien (A1A 1A1), ou code postal FR/MA/US (4-5 chiffres) plus un mot de voie.
     has_address = bool(re.search(r"\b[A-Z]\d[A-Z] ?\d[A-Z]\d\b", text)) or bool(re.search(r"\b\d{4,5}\b", text)) and bool(re.search(
         r"\b(rue|avenue|av\.|ave|boulevard|bd|blvd|place|quai|chemin|route|allée|street|st\.|road|rd|drive|dr\.|way|lane"
+        r"|circle|cir|court|ct|parkway|pkwy|highway|hwy|plaza|terrace|crescent|suite|ste"
         r"|derb|lot|résidence)\b", low))
     checks = [
         ("schema_local", any(t in ld for t in LOCAL_TYPES)),
